@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,9 +18,13 @@ export interface LabelFormData {
 
 interface CreateLabelFormProps {
   onSubmit: (data: LabelFormData & { barcodeId: string }) => void;
+  isSubmitting?: boolean;
 }
 
-export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({ onSubmit }) => {
+export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({ 
+  onSubmit,
+  isSubmitting = false
+}) => {
   const today = format(new Date(), "yyyy-MM-dd");
   const defaultExpiry = format(addDays(new Date(), 3), "yyyy-MM-dd");
   
@@ -82,17 +85,17 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({ onSubmit }) =>
       barcodeId,
     });
     
-    // Reset form
-    setFormData({
-      product: "",
-      preparedBy: "",
-      preparedDate: today,
-      expiryDate: defaultExpiry,
-    });
-    setBarcodeId("");
-    setBarcodeSvg("");
-    
-    toast.success("Label saved to inventory!");
+    // Reset form if save is successful
+    if (!isSubmitting) {
+      setFormData({
+        product: "",
+        preparedBy: "",
+        preparedDate: today,
+        expiryDate: defaultExpiry,
+      });
+      setBarcodeId("");
+      setBarcodeSvg("");
+    }
   };
 
   return (
@@ -178,6 +181,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({ onSubmit }) =>
                 variant="outline"
                 onClick={handlePrint}
                 className="flex items-center justify-center"
+                disabled={isSubmitting}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Print Label
@@ -186,9 +190,10 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({ onSubmit }) =>
               <Button 
                 onClick={handleSave}
                 className="flex items-center justify-center"
+                disabled={isSubmitting}
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save to Inventory
+                {isSubmitting ? "Saving..." : "Save to Inventory"}
               </Button>
             </div>
           </>

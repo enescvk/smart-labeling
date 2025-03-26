@@ -1,38 +1,56 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { InventoryCard } from "../components/InventoryCard";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Barcode, Clock, Plus, Search, ShoppingBag } from "lucide-react";
-import { mockInventory, getRecentItems, getExpiringItems, InventoryItem } from "../utils/mockData";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { 
+  getActiveInventoryItems, 
+  getRecentItems, 
+  getExpiringItems,
+  InventoryItem 
+} from "../services/inventoryService";
 
 const Index: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [activeItems, setActiveItems] = useState<InventoryItem[]>([]);
-  const [recentItems, setRecentItems] = useState<InventoryItem[]>([]);
-  const [expiringItems, setExpiringItems] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Fetch data (simulated)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setActiveItems(mockInventory.filter(item => item.status === "active"));
-      setRecentItems(getRecentItems());
-      setExpiringItems(getExpiringItems());
-      setIsLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  // Fetch all active items
+  const { 
+    data: activeItems = [], 
+    isLoading: isLoadingActive 
+  } = useQuery({
+    queryKey: ['inventoryItems', 'active'],
+    queryFn: getActiveInventoryItems
+  });
+  
+  // Fetch recent items
+  const { 
+    data: recentItems = [], 
+    isLoading: isLoadingRecent 
+  } = useQuery({
+    queryKey: ['inventoryItems', 'recent'],
+    queryFn: getRecentItems
+  });
+  
+  // Fetch expiring items
+  const { 
+    data: expiringItems = [], 
+    isLoading: isLoadingExpiring 
+  } = useQuery({
+    queryKey: ['inventoryItems', 'expiring'],
+    queryFn: getExpiringItems
+  });
+  
+  const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring;
   
   // Stats calculations
-  const totalItems = mockInventory.length;
   const activeItemsCount = activeItems.length;
-  const usedItemsCount = totalItems - activeItemsCount;
+  const usedItemsCount = 0; // This would need a separate query to get an accurate count
+  const totalItems = activeItemsCount + usedItemsCount;
   
   // Animation variants
   const containerVariants = {

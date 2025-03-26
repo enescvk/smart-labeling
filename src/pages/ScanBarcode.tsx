@@ -5,35 +5,62 @@ import { BarcodeScanner } from "../components/BarcodeScanner";
 import { InventoryCard } from "../components/InventoryCard";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Trash2 } from "lucide-react";
-import { mockInventory } from "../utils/mockData";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { getItemById, updateItemStatus } from "../services/inventoryService";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { InventoryItem } from "../services/inventoryService";
 
 const ScanBarcode: React.FC = () => {
-  const [foundItem, setFoundItem] = useState<typeof mockInventory[0] | null>(null);
+  const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   
-  const handleBarcodeFound = (barcode: string) => {
-    const item = mockInventory.find(item => item.id === barcode);
-    if (item) {
+  // Mutation for updating item status
+  const updateStatusMutation = useMutation({
+    mutationFn: (id: string) => updateItemStatus(id, "used"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
+    }
+  });
+  
+  const handleBarcodeFound = async (barcode: string) => {
+    setIsLoading(true);
+    try {
+      const item = await getItemById(barcode);
       setFoundItem(item);
+      if (!item) {
+        toast.error("Item not found", {
+          description: "The scanned barcode does not match any item in inventory."
+        });
+      }
+    } catch (error) {
+      toast.error("Error finding item", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
   const handleMarkAsUsed = () => {
     if (!foundItem) return;
     
-    // Update the item in mockInventory
-    const itemIndex = mockInventory.findIndex(item => item.id === foundItem.id);
-    if (itemIndex !== -1) {
-      mockInventory[itemIndex].status = "used";
-      
-      toast.success("Item marked as used", {
-        description: `${foundItem.product} has been marked as used in inventory.`
-      });
-      
-      // Reset found item
-      setFoundItem(null);
-    }
+    updateStatusMutation.mutate(foundItem.id, {
+      onSuccess: () => {
+        toast.success("Item marked as used", {
+          description: `${foundItem.product} has been marked as used in inventory.`
+        });
+        
+        // Reset found item
+        setFoundItem(null);
+      },
+      onError: (error) => {
+        toast.error("Failed to update item", {
+          description: error instanceof Error ? error.message : "An unexpected error occurred"
+        });
+      }
+    });
   };
 
   return (
@@ -69,7 +96,13 @@ const ScanBarcode: React.FC = () => {
             <div>
               <h3 className="text-lg font-medium mb-4">Scanned Item</h3>
               
-              {foundItem ? (
+              {isLoading ? (
+                <div className="kitchen-card animate-pulse p-12 text-kitchen-400">
+                  <div className="h-4 bg-kitchen-100 rounded w-1/3 mb-4"></div>
+                  <div className="h-8 bg-kitchen-100 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-kitchen-100 rounded w-3/4"></div>
+                </div>
+              ) : foundItem ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -87,9 +120,10 @@ const ScanBarcode: React.FC = () => {
                       <Button
                         onClick={handleMarkAsUsed}
                         className="w-full"
+                        disabled={updateStatusMutation.isPending}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Mark as Used
+                        {updateStatusMutation.isPending ? "Updating..." : "Mark as Used"}
                       </Button>
                     </motion.div>
                   )}

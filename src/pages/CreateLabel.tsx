@@ -1,36 +1,47 @@
-
 import React from "react";
 import { Layout } from "../components/Layout";
 import { CreateLabelForm, LabelFormData } from "../components/CreateLabelForm";
 import { toast } from "sonner";
-import { mockInventory } from "../utils/mockData";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { addInventoryItem } from "../services/inventoryService";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const CreateLabel: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
+  const addLabelMutation = useMutation({
+    mutationFn: (data: LabelFormData & { barcodeId: string }) => {
+      return addInventoryItem({
+        id: data.barcodeId,
+        product: data.product,
+        preparedBy: data.preparedBy,
+        preparedDate: data.preparedDate,
+        expiryDate: data.expiryDate,
+        status: "active"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
+    }
+  });
   
   const handleSubmit = (data: LabelFormData & { barcodeId: string }) => {
-    // In a real app, this would call an API to save to database
-    console.log("Label created:", data);
-    
-    // Add to mock inventory
-    mockInventory.unshift({
-      id: data.barcodeId,
-      product: data.product,
-      preparedBy: data.preparedBy,
-      preparedDate: data.preparedDate,
-      expiryDate: data.expiryDate,
-      status: "active",
-      createdAt: new Date().toISOString()
-    });
-    
-    // Success toast with action to view inventory
-    toast("Label added to inventory", {
-      description: `${data.product} has been added to inventory.`,
-      action: {
-        label: "View Inventory",
-        onClick: () => navigate("/")
+    addLabelMutation.mutate(data, {
+      onSuccess: () => {
+        toast("Label added to inventory", {
+          description: `${data.product} has been added to inventory.`,
+          action: {
+            label: "View Inventory",
+            onClick: () => navigate("/")
+          }
+        });
+      },
+      onError: (error) => {
+        toast.error("Failed to add label", {
+          description: error instanceof Error ? error.message : "An unexpected error occurred"
+        });
       }
     });
   };
@@ -62,7 +73,10 @@ const CreateLabel: React.FC = () => {
             </motion.p>
           </header>
           
-          <CreateLabelForm onSubmit={handleSubmit} />
+          <CreateLabelForm 
+            onSubmit={handleSubmit} 
+            isSubmitting={addLabelMutation.isPending}
+          />
         </motion.div>
       </div>
     </Layout>
