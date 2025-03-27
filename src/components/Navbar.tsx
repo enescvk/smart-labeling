@@ -1,148 +1,196 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Barcode, History, Home, Plus, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 
 export const Navbar: React.FC = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: <Home className="w-5 h-5" /> },
-    { name: "Create Label", path: "/create", icon: <Plus className="w-5 h-5" /> },
-    { name: "Scan", path: "/scan", icon: <Barcode className="w-5 h-5" /> },
-    { name: "History", path: "/history", icon: <History className="w-5 h-5" /> }
+  const routes = [
+    {
+      href: "/",
+      label: "Home",
+      icon: Home,
+      active: location.pathname === "/",
+    },
+    {
+      href: "/create",
+      label: "Create Label",
+      icon: Plus,
+      active: location.pathname === "/create",
+    },
+    {
+      href: "/scan",
+      label: "Scan Barcode",
+      icon: BarChart3,
+      active: location.pathname === "/scan",
+    },
+    {
+      href: "/history",
+      label: "History",
+      icon: HistoryIcon,
+      active: location.pathname === "/history",
+    },
   ];
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Close mobile menu when path changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  const mobileMenuVariants = {
-    closed: {
-      opacity: 0,
-      y: -20,
-      transition: {
-        staggerChildren: 0.05,
-        staggerDirection: -1
-      }
-    },
-    open: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    closed: { opacity: 0, y: -10 },
-    open: { opacity: 1, y: 0 }
-  };
-
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
-      }`}
-    >
-      <div className="container px-4 sm:px-6 mx-auto">
-        <div className="flex items-center justify-between h-16">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
+      <nav className="container flex items-center justify-between h-16 px-4 sm:px-6 max-w-7xl mx-auto">
+        <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="p-1.5 bg-primary rounded-md"
-            >
-              <Barcode className="h-6 w-6 text-white" />
-            </motion.div>
-            <motion.span 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="font-medium text-xl"
-            >
-              KitchenLabel
-            </motion.span>
+            <span className="hidden font-bold text-xl text-kitchen-900 sm:inline-block">KitchenLabel</span>
           </Link>
+        </div>
 
-          {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-1 transition-colors ${
-                  location.pathname === item.path
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-kitchen-100 text-kitchen-600 hover:text-kitchen-800"
-                }`}
-              >
-                {item.icon}
-                <span>{item.name}</span>
+        {/* Desktop navigation */}
+        <div className="hidden md:flex md:items-center md:justify-between md:flex-1 md:ml-8">
+          <div className="flex items-center space-x-1">
+            {routes.map((route) => (
+              <Link to={route.href} key={route.href}>
+                <Button
+                  variant={route.active ? "default" : "ghost"}
+                  size="sm"
+                  className="relative"
+                >
+                  <route.icon className="h-4 w-4 mr-2" />
+                  {route.label}
+                  {route.active && (
+                    <motion.div
+                      className="absolute -bottom-[9px] left-0 right-0 h-0.5 bg-primary"
+                      layoutId="navbar-indicator"
+                      transition={{ type: "spring", duration: 0.6 }}
+                    />
+                  )}
+                </Button>
               </Link>
             ))}
-          </nav>
-
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 rounded-md text-kitchen-500 hover:text-kitchen-700 hover:bg-kitchen-100 transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url || ""} />
+                      <AvatarFallback>
+                        {user.email?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {user.user_metadata?.name || user.email?.split('@')[0]}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/auth">
+                <Button variant="default" size="sm">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Mobile navigation */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial="closed"
-            animate="open"
-            exit="closed"
-            variants={mobileMenuVariants}
-            className="md:hidden bg-white/95 backdrop-blur-md shadow-lg absolute top-16 inset-x-0"
-          >
-            <div className="px-3 py-4 space-y-1">
-              {navItems.map((item) => (
-                <motion.div key={item.path} variants={itemVariants}>
+        {/* Mobile navigation */}
+        <div className="md:hidden">
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72 sm:max-w-xs">
+              <div className="flex flex-col space-y-4 mt-8">
+                {routes.map((route) => (
                   <Link
-                    to={item.path}
-                    className={`block px-3 py-3 rounded-md text-base font-medium flex items-center ${
-                      location.pathname === item.path
-                        ? "bg-primary/10 text-primary"
-                        : "hover:bg-kitchen-100 text-kitchen-600 hover:text-kitchen-800"
-                    }`}
+                    key={route.href}
+                    to={route.href}
+                    onClick={() => setIsOpen(false)}
                   >
-                    <span className="mr-3">{item.icon}</span>
-                    <span>{item.name}</span>
+                    <Button
+                      variant={route.active ? "default" : "ghost"}
+                      className="w-full justify-start"
+                    >
+                      <route.icon className="mr-2 h-5 w-5" />
+                      {route.label}
+                    </Button>
                   </Link>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                ))}
+                
+                <div className="mt-auto pt-4 border-t">
+                  {user ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2 px-2">
+                        <Avatar>
+                          <AvatarImage src={user.user_metadata?.avatar_url || ""} />
+                          <AvatarFallback>
+                            {user.email?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium">
+                            {user.user_metadata?.name || user.email?.split('@')[0]}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => {
+                          signOut();
+                          setIsOpen(false);
+                        }}
+                      >
+                        <LogOut className="mr-2 h-5 w-5" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  ) : (
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full justify-start">
+                        <LogIn className="mr-2 h-5 w-5" />
+                        Sign In
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
     </header>
   );
 };
