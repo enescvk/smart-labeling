@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
+import { Spinner } from "@/components/ui/spinner";
 
 // Define the validation schema for login
 const loginSchema = z.object({
@@ -45,12 +46,7 @@ const Auth: React.FC = () => {
   const [activeTab, setActiveTab] = useState("login");
   const { signIn, signUp, signInWithGoogle, user, isLoading } = useAuth();
   
-  // If user is already logged in, redirect to home page
-  if (user) {
-    return <Navigate to="/" />;
-  }
-
-  // Login form
+  // Initialize forms outside of any conditional returns
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -59,7 +55,6 @@ const Auth: React.FC = () => {
     },
   });
 
-  // Signup form
   const signupForm = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -87,6 +82,23 @@ const Auth: React.FC = () => {
       console.error("Signup error:", error);
     }
   };
+
+  // If still loading, show loading spinner
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner size="lg" />
+          <span className="ml-2">Loading authentication...</span>
+        </div>
+      </Layout>
+    );
+  }
+  
+  // If user is already logged in, redirect to home page
+  if (user) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <Layout>
