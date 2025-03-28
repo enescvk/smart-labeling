@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 
@@ -46,7 +45,7 @@ export const getInventoryItems = async (): Promise<InventoryItem[]> => {
     throw error;
   }
 
-  return data.map(transformDbItem);
+  return data ? data.map(transformDbItem) : [];
 };
 
 // Get active inventory items
@@ -62,7 +61,7 @@ export const getActiveInventoryItems = async (): Promise<InventoryItem[]> => {
     throw error;
   }
 
-  return data.map(transformDbItem);
+  return data ? data.map(transformDbItem) : [];
 };
 
 // Get recent items (last 5)
@@ -78,7 +77,7 @@ export const getRecentItems = async (): Promise<InventoryItem[]> => {
     throw error;
   }
 
-  return data.map(transformDbItem);
+  return data ? data.map(transformDbItem) : [];
 };
 
 // Get items expiring soon (active items sorted by closest expiry date)
@@ -95,7 +94,7 @@ export const getExpiringItems = async (): Promise<InventoryItem[]> => {
     throw error;
   }
 
-  return data.map(transformDbItem);
+  return data ? data.map(transformDbItem) : [];
 };
 
 // Add an item to inventory
