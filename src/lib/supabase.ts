@@ -59,3 +59,22 @@ export const supabase = createClient<Database>(
     }
   }
 );
+
+// Add a simple test query to verify connectivity
+export const testSupabaseConnection = async () => {
+  try {
+    console.log('Testing Supabase connection...');
+    const { data, error } = await supabase.from('inventory').select('count').single();
+    
+    if (error) {
+      console.error('Supabase connection test failed:', error.message);
+      return false;
+    }
+    
+    console.log('Supabase connection successful!');
+    return true;
+  } catch (err) {
+    console.error('Exception in testSupabaseConnection:', err);
+    return false;
+  }
+};

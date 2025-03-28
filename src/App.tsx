@@ -13,42 +13,58 @@ import ScanBarcode from "./pages/ScanBarcode";
 import History from "./pages/History";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
+import { testSupabaseConnection } from "./lib/supabase";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/create" element={
-                <PrivateRoute>
-                  <CreateLabel />
-                </PrivateRoute>
-              } />
-              <Route path="/scan" element={
-                <PrivateRoute>
-                  <ScanBarcode />
-                </PrivateRoute>
-              } />
-              <Route path="/history" element={
-                <PrivateRoute>
-                  <History />
-                </PrivateRoute>
-              } />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AnimatePresence>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useEffect(() => {
+    // Test Supabase connection on app startup
+    testSupabaseConnection();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/create" element={
+                  <PrivateRoute>
+                    <CreateLabel />
+                  </PrivateRoute>
+                } />
+                <Route path="/scan" element={
+                  <PrivateRoute>
+                    <ScanBarcode />
+                  </PrivateRoute>
+                } />
+                <Route path="/history" element={
+                  <PrivateRoute>
+                    <History />
+                  </PrivateRoute>
+                } />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AnimatePresence>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

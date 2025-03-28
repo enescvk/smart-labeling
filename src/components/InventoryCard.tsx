@@ -1,6 +1,6 @@
 
 import React from "react";
-import { InventoryItem } from "../utils/mockData";
+import { InventoryItem } from "../services/inventoryService";
 import { motion } from "framer-motion";
 import { Barcode, Calendar, Clock, User } from "lucide-react";
 
@@ -32,7 +32,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({ item, index = 0 })
 
   return (
     <motion.div 
-      className="kitchen-card"
+      className="bg-white shadow-sm border border-kitchen-100 rounded-lg p-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -40,7 +40,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({ item, index = 0 })
     >
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-medium text-lg text-kitchen-900">{item.product}</h3>
-        <span className={`kitchen-chip ${statusColor}`}>
+        <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
           {statusText}
         </span>
       </div>
