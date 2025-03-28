@@ -2,16 +2,14 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables with validation
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://htrstvloqgqvnvtiqfwa.supabase.co";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cnN0dmxvcWdxdm52dGlxZndhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NjU2ODcsImV4cCI6MjA1ODU0MTY4N30.R4cxC3z5aCUGYZIQWgMs2hoYrUHKYC3U89KXNbYmyHw";
 
 // Validate that required environment variables are set
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
     'Missing environment variables for Supabase. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
   );
-  // Provide fallback values for development only - replace with your Supabase project URL and anon key
-  // For security reasons, you should properly set these environment variables
 }
 
 export type Database = {
@@ -52,6 +50,12 @@ export type Database = {
 
 // Create the Supabase client with proper typing
 export const supabase = createClient<Database>(
-  supabaseUrl || 'https://your-supabase-url.supabase.co',  // Fallback URL (replace with your actual URL)
-  supabaseAnonKey || 'your-anon-key'  // Fallback key (replace with your actual key)
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true
+    }
+  }
 );
