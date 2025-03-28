@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { InventoryCard } from "../components/InventoryCard";
@@ -5,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Barcode, Clock, Plus, Search, ShoppingBag } from "lucide-react";
+import { Barcode, Clock, Search, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -162,12 +163,6 @@ const Index: React.FC = () => {
                 Scan Barcode
               </Button>
             </Link>
-            <Link to="/create">
-              <Button size="sm">
-                <Plus className="mr-1 h-4 w-4" />
-                Create Label
-              </Button>
-            </Link>
           </div>
         </div>
         
@@ -208,12 +203,6 @@ const Index: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-kitchen-500">No active items found</p>
-                <Link to="/create" className="mt-4 inline-block">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Label
-                  </Button>
-                </Link>
               </div>
             )}
           </TabsContent>
