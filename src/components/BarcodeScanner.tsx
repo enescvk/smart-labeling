@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Barcode, Camera, Check, Search } from "lucide-react";
-import { mockInventory } from "../utils/mockData";
 import { motion } from "framer-motion";
+import { getItemById } from "../services/inventoryService";
 
 interface BarcodeScannerProps {
   onItemFound: (barcode: string) => void;
@@ -17,22 +17,33 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
   const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   
-  const handleManualSearch = (e: React.FormEvent) => {
+  const handleManualSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!barcodeInput.trim()) {
       toast.error("Please enter a barcode");
       return;
     }
     
-    // Check if barcode exists in mock data
-    const found = mockInventory.some(item => item.id === barcodeInput);
+    setIsSearching(true);
     
-    if (found) {
-      toast.success("Barcode found!");
-      onItemFound(barcodeInput);
-    } else {
-      toast.error("Barcode not found in inventory");
+    try {
+      // Query the actual database for the barcode
+      const item = await getItemById(barcodeInput);
+      
+      if (item) {
+        toast.success("Barcode found!");
+        onItemFound(barcodeInput);
+      } else {
+        toast.error("Barcode not found in inventory");
+      }
+    } catch (error) {
+      toast.error("Error searching for barcode", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      });
+    } finally {
+      setIsSearching(false);
     }
   };
   
@@ -45,13 +56,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
       setIsScanning(false);
       setScanComplete(true);
       
-      // Randomly pick a barcode from mock data
-      const randomItem = mockInventory[Math.floor(Math.random() * mockInventory.length)];
-      setBarcodeInput(randomItem.id);
+      // For demo, we'll use a random value but in production this should use a real scanner
+      // We'll use a fixed value so we can test with a known barcode
+      const demoBarcode = "KL480601518652"; // This should be a barcode that exists in the database
+      setBarcodeInput(demoBarcode);
       
       setTimeout(() => {
         toast.success("Barcode scanned successfully!");
-        onItemFound(randomItem.id);
+        onItemFound(demoBarcode);
       }, 500);
     }, 2000);
   };
@@ -139,8 +151,12 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
                 placeholder="Enter barcode"
                 className="flex-1"
               />
-              <Button type="submit" className="ml-2">
-                <Search className="h-4 w-4" />
+              <Button type="submit" className="ml-2" disabled={isSearching}>
+                {isSearching ? (
+                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
