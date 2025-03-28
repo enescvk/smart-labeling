@@ -24,29 +24,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event, currentSession) => {
         console.log("Auth state changed:", event);
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Use synchronous updates to prevent React conflicts
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         
+        // Use a timeout to defer toast notifications to avoid React rendering conflicts
         if (event === 'SIGNED_IN') {
-          toast({
-            title: "Signed in successfully",
-            description: "Welcome back!",
-          });
+          setTimeout(() => {
+            toast({
+              title: "Signed in successfully",
+              description: "Welcome back!",
+            });
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Signed out",
-            description: "You have been signed out successfully",
-          });
+          setTimeout(() => {
+            toast({
+              title: "Signed out",
+              description: "You have been signed out successfully",
+            });
+          }, 0);
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
       setIsLoading(false);
     });
 
@@ -64,11 +70,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        toast({
-          title: "Error signing in",
-          description: error.message,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Error signing in",
+            description: error.message,
+            variant: "destructive",
+          });
+        }, 0);
         throw error;
       }
     } catch (error) {
@@ -88,17 +96,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        toast({
-          title: "Error signing up",
-          description: error.message,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Error signing up",
+            description: error.message,
+            variant: "destructive",
+          });
+        }, 0);
         throw error;
       } else {
-        toast({
-          title: "Sign up successful",
-          description: "Please check your email for the confirmation link.",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Sign up successful",
+            description: "Please check your email for the confirmation link.",
+          });
+        }, 0);
       }
     } catch (error) {
       console.error("Error signing up:", error);
@@ -113,11 +125,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
-        toast({
-          title: "Error signing out",
-          description: error.message,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Error signing out",
+            description: error.message,
+            variant: "destructive",
+          });
+        }, 0);
         throw error;
       }
     } catch (error) {
@@ -139,11 +153,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        toast({
-          title: "Error signing in with Google",
-          description: error.message,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Error signing in with Google",
+            description: error.message,
+            variant: "destructive",
+          });
+        }, 0);
         throw error;
       }
     } catch (error) {
@@ -154,18 +170,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Create a stable context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    session,
+    user,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+    signInWithGoogle,
+  }), [session, user, isLoading]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-        signInWithGoogle,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
