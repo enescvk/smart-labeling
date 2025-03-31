@@ -72,10 +72,18 @@ export const svgToImage = (svgString: string): Promise<string> => {
 };
 
 /**
- * Simulate printing a barcode
- * In a real app, this would connect to a printer API
+ * Simulate printing a barcode with product details
  */
-export const printBarcode = async (barcodeId: string) => {
+export const printBarcode = async (
+  barcodeId: string, 
+  productDetails?: {
+    product: string;
+    preparedBy: string;
+    containerType: string;
+    preparedDate: string;
+    expiryDate: string;
+  }
+) => {
   const svgString = generateBarcodeSvg(barcodeId);
   try {
     const imageUrl = await svgToImage(svgString);
@@ -113,6 +121,15 @@ export const printBarcode = async (barcodeId: string) => {
                 font-size: 14px;
                 color: #666;
               }
+              .product-details {
+                margin-top: 5px;
+                font-size: 11px;
+                color: #333;
+                text-align: left;
+              }
+              .product-details p {
+                margin: 2px 0;
+              }
               button {
                 margin-top: 20px;
                 padding: 8px 16px;
@@ -130,6 +147,15 @@ export const printBarcode = async (barcodeId: string) => {
               <div class="info">
                 Barcode ID: ${barcodeId}
               </div>
+              ${productDetails ? `
+                <div class="product-details">
+                  <p><strong>Product:</strong> ${productDetails.product}</p>
+                  <p><strong>Prepared By:</strong> ${productDetails.preparedBy}</p>
+                  <p><strong>Container:</strong> ${productDetails.containerType}</p>
+                  <p><strong>Prep Date:</strong> ${productDetails.preparedDate}</p>
+                  <p><strong>Expires:</strong> ${productDetails.expiryDate}</p>
+                </div>
+              ` : ''}
             </div>
             <button onclick="window.print(); return false;">Print Barcode</button>
             <p class="info">In a real application, this would be sent directly to a label printer.</p>

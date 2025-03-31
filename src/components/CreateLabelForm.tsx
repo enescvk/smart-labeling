@@ -76,7 +76,13 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
     if (!barcodeId) return;
     
     toast.promise(
-      printBarcode(barcodeId),
+      printBarcode(barcodeId, {
+        product: formData.product,
+        preparedBy: formData.preparedBy,
+        containerType: formData.containerType,
+        preparedDate: formData.preparedDate,
+        expiryDate: formData.expiryDate
+      }),
       {
         loading: "Sending to printer...",
         success: "Sent to printer!",
