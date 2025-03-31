@@ -172,7 +172,23 @@ interface HistoryItemProps {
 }
 
 const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
-  const isActive = item.status === "active";
+  const today = new Date();
+  const expiryDate = new Date(item.expiryDate);
+  const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  
+  let statusColor = "";
+  let statusText = "";
+  
+  if (item.status === "used") {
+    statusColor = "bg-gray-100 text-gray-600";
+    statusText = "Used";
+  } else if (daysUntilExpiry < 0) {
+    statusColor = "bg-red-100 text-red-800";
+    statusText = "Expired";
+  } else {
+    statusColor = "bg-green-100 text-green-800";
+    statusText = "Active";
+  }
   
   return (
     <Card className="overflow-hidden">
@@ -183,8 +199,8 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
               <h3 className="font-medium text-lg text-kitchen-900">{item.product}</h3>
               <p className="text-kitchen-500 text-sm mt-1">Barcode: {item.id}</p>
             </div>
-            <span className={`kitchen-chip ${isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
-              {isActive ? "Active" : "Used"}
+            <span className={`kitchen-chip ${statusColor}`}>
+              {statusText}
             </span>
           </div>
           
@@ -206,7 +222,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
           </div>
         </div>
         
-        <div className={`w-full md:w-2 md:h-full ${isActive ? "bg-green-400" : "bg-gray-300"}`}>
+        <div className={`w-full md:w-2 md:h-full ${statusColor.includes("red") ? "bg-red-400" : statusColor.includes("green") ? "bg-green-400" : "bg-gray-300"}`}>
           {/* Status indicator bar */}
         </div>
       </div>

@@ -22,9 +22,12 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({ item, index = 0 })
   if (item.status === "used") {
     statusColor = "bg-gray-100 text-gray-600";
     statusText = "Used";
-  } else if (daysUntilExpiry <= 1) {
+  } else if (daysUntilExpiry < 0) {
     statusColor = "bg-red-100 text-red-800";
-    statusText = `Expires today`;
+    statusText = "Expired";
+  } else if (daysUntilExpiry === 0) {
+    statusColor = "bg-red-100 text-red-800";
+    statusText = "Expires today";
   } else if (daysUntilExpiry <= 2) {
     statusColor = "bg-orange-100 text-orange-800";
     statusText = `Expires in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}`;
