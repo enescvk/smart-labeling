@@ -4,28 +4,28 @@ import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InventoryItem, mockInventory } from "../utils/mockData";
 import { Search, Barcode, Calendar, Clock, User, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { getInventoryItems } from "../services/inventoryService";
+import { InventoryItem } from "../services/inventoryService";
+import { useQuery } from "@tanstack/react-query";
 
 const History: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch inventory data using React Query
+  const { data: inventoryItems, isLoading, error } = useQuery({
+    queryKey: ['inventoryItems'],
+    queryFn: getInventoryItems
+  });
   
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
+    if (!inventoryItems) return;
     
-    return () => clearTimeout(timer);
-  }, []);
-  
-  useEffect(() => {
     // Filter items based on active tab and search query
-    let items = [...mockInventory];
+    let items = [...inventoryItems];
     
     // Filter by status
     if (activeTab === "active") {
@@ -50,7 +50,7 @@ const History: React.FC = () => {
     );
     
     setFilteredItems(items);
-  }, [activeTab, searchQuery, mockInventory]);
+  }, [activeTab, searchQuery, inventoryItems]);
   
   // Animation variants
   const containerVariants = {
@@ -130,6 +130,14 @@ const History: React.FC = () => {
                   </div>
                 </Card>
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <XCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+              <h3 className="text-xl font-medium text-kitchen-800 mb-2">Error loading inventory data</h3>
+              <p className="text-kitchen-500">
+                {error instanceof Error ? error.message : "Failed to load inventory history"}
+              </p>
             </div>
           ) : filteredItems.length > 0 ? (
             <motion.div 
