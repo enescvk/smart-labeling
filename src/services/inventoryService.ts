@@ -8,6 +8,7 @@ export interface InventoryItem {
   preparedDate: string;
   expiryDate: string;
   status: 'active' | 'used';
+  containerType: string;
   createdAt: string;
 }
 
@@ -19,6 +20,7 @@ const transformDbItem = (item: any): InventoryItem => ({
   preparedDate: item.prepared_date,
   expiryDate: item.expiry_date,
   status: item.status,
+  containerType: item.container_type || 'Container',
   createdAt: item.created_at
 });
 
@@ -30,6 +32,7 @@ const transformToDbItem = (item: Omit<InventoryItem, 'createdAt'>) => ({
   prepared_date: item.preparedDate,
   expiry_date: item.expiryDate,
   status: item.status,
+  container_type: item.containerType,
   created_at: new Date().toISOString()
 });
 

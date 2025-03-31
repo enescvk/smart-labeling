@@ -2,7 +2,7 @@
 import React from "react";
 import { InventoryItem } from "../services/inventoryService";
 import { motion } from "framer-motion";
-import { Barcode, Calendar, Clock, User } from "lucide-react";
+import { Barcode, Calendar, Clock, User, Package } from "lucide-react";
 
 interface InventoryCardProps {
   item: InventoryItem;
@@ -52,6 +52,11 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({ item, index = 0 })
         <div className="flex items-center">
           <User className="w-4 h-4 mr-2 text-kitchen-400" />
           <span>Prepared by: {item.preparedBy}</span>
+        </div>
+        
+        <div className="flex items-center">
+          <Package className="w-4 h-4 mr-2 text-kitchen-400" />
+          <span>Container: {item.containerType}</span>
         </div>
         
         <div className="flex items-center">

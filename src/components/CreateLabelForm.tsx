@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateBarcodeId, generateBarcodeSvg, printBarcode } from "../utils/barcodeGenerator";
 import { toast } from "sonner";
 import { Barcode, Printer, Save } from "lucide-react";
@@ -14,6 +16,7 @@ export interface LabelFormData {
   preparedBy: string;
   preparedDate: string;
   expiryDate: string;
+  containerType: string;
 }
 
 interface CreateLabelFormProps {
@@ -33,6 +36,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
     preparedBy: "",
     preparedDate: today,
     expiryDate: defaultExpiry,
+    containerType: "Container"
   });
   const [barcodeId, setBarcodeId] = useState<string>("");
   const [barcodeSvg, setBarcodeSvg] = useState<string>("");
@@ -41,6 +45,10 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  
+  const handleContainerTypeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, containerType: value }));
   };
   
   const generateLabel = (e: React.FormEvent) => {
@@ -92,6 +100,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
         preparedBy: "",
         preparedDate: today,
         expiryDate: defaultExpiry,
+        containerType: "Container"
       });
       setBarcodeId("");
       setBarcodeSvg("");
@@ -124,6 +133,26 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
               onChange={handleChange}
               required
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="containerType">Container Type</Label>
+            <Select 
+              value={formData.containerType} 
+              onValueChange={handleContainerTypeChange}
+            >
+              <SelectTrigger id="containerType">
+                <SelectValue placeholder="Select container type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Container">Container</SelectItem>
+                <SelectItem value="Bottle">Bottle</SelectItem>
+                <SelectItem value="Jar">Jar</SelectItem>
+                <SelectItem value="Bag">Bag</SelectItem>
+                <SelectItem value="Box">Box</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid grid-cols-2 gap-4">

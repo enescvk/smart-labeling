@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       inventory: {
         Row: {
+          container_type: string
           created_at: string
           expiry_date: string
           id: string
@@ -20,6 +21,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          container_type?: string
           created_at?: string
           expiry_date: string
           id: string
@@ -29,6 +31,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          container_type?: string
           created_at?: string
           expiry_date?: string
           id?: string

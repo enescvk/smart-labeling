@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Layout } from "../components/Layout";
 import { CreateLabelForm, LabelFormData } from "../components/CreateLabelForm";
@@ -19,6 +20,7 @@ const CreateLabel: React.FC = () => {
         preparedBy: data.preparedBy,
         preparedDate: data.preparedDate,
         expiryDate: data.expiryDate,
+        containerType: data.containerType,
         status: "active"
       });
     },
