@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 
@@ -102,14 +101,19 @@ export const getRecentItems = async (): Promise<InventoryItem[]> => {
   }
 };
 
-// Get items expiring soon (active items sorted by closest expiry date)
+// Get items expiring soon (active items that are not expired but expiring soon)
 export const getExpiringItems = async (): Promise<InventoryItem[]> => {
   console.log('Fetching expiring items');
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const formattedToday = today.toISOString().split('T')[0];
+    
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
       .eq('status', 'active')
+      .gte('expiry_date', formattedToday) // Only get items expiring today or in the future
       .order('expiry_date', { ascending: true })
       .limit(5);
 
@@ -122,6 +126,34 @@ export const getExpiringItems = async (): Promise<InventoryItem[]> => {
     return data ? data.map(transformDbItem) : [];
   } catch (err) {
     console.error('Exception in getExpiringItems:', err);
+    return [];
+  }
+};
+
+// Get expired items (active items with expiry date in the past)
+export const getExpiredItems = async (): Promise<InventoryItem[]> => {
+  console.log('Fetching expired items');
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const formattedToday = today.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('*')
+      .eq('status', 'active')
+      .lt('expiry_date', formattedToday) // Only get items expired (before today)
+      .order('expiry_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching expired items:', error);
+      throw error;
+    }
+
+    console.log('Retrieved expired items:', data);
+    return data ? data.map(transformDbItem) : [];
+  } catch (err) {
+    console.error('Exception in getExpiredItems:', err);
     return [];
   }
 };

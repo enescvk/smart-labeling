@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { InventoryCard } from "../components/InventoryCard";
@@ -6,13 +5,14 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Barcode, Clock, Search, ShoppingBag } from "lucide-react";
+import { Barcode, Clock, Search, ShoppingBag, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { 
   getActiveInventoryItems, 
   getRecentItems, 
   getExpiringItems,
+  getExpiredItems,
   InventoryItem 
 } from "../services/inventoryService";
 
@@ -46,7 +46,16 @@ const Index: React.FC = () => {
     queryFn: getExpiringItems
   });
   
-  const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring;
+  // Fetch expired items
+  const { 
+    data: expiredItems = [], 
+    isLoading: isLoadingExpired 
+  } = useQuery({
+    queryKey: ['inventoryItems', 'expired'],
+    queryFn: getExpiredItems
+  });
+  
+  const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring || isLoadingExpired;
   
   // Stats calculations
   const activeItemsCount = activeItems.length;
@@ -92,8 +101,8 @@ const Index: React.FC = () => {
         </header>
         
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {[1, 2, 3].map((index) => (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((index) => (
               <Card key={index} className="p-6 h-32 animate-pulse">
                 <div className="h-4 bg-kitchen-100 rounded w-1/3 mb-4"></div>
                 <div className="h-8 bg-kitchen-100 rounded w-1/2"></div>
@@ -102,7 +111,7 @@ const Index: React.FC = () => {
           </div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -151,6 +160,21 @@ const Index: React.FC = () => {
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-400"></div>
               </Card>
             </motion.div>
+            
+            <motion.div variants={itemVariants}>
+              <Card className="relative overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-kitchen-400 text-sm font-medium">Expired Items</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between">
+                    <div className="text-3xl font-bold">{expiredItems.length}</div>
+                    <AlertTriangle className="h-8 w-8 text-red-300" />
+                  </div>
+                </CardContent>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-400"></div>
+              </Card>
+            </motion.div>
           </motion.div>
         )}
         
@@ -171,6 +195,7 @@ const Index: React.FC = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="recent">Recent</TabsTrigger>
             <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
+            <TabsTrigger value="expired">Expired</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="mt-0">
@@ -271,6 +296,40 @@ const Index: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-kitchen-500">No items expiring soon</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="expired" className="mt-0">
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((index) => (
+                  <Card key={index} className="p-6 h-48 animate-pulse">
+                    <div className="h-4 bg-kitchen-100 rounded w-3/4 mb-4"></div>
+                    <div className="space-y-3">
+                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
+                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
+                      <div className="h-3 bg-kitchen-100 rounded w-3/4"></div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : expiredItems.length > 0 ? (
+              <motion.div 
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {expiredItems.map((item, index) => (
+                  <motion.div key={item.id} variants={itemVariants}>
+                    <InventoryCard item={item} index={index} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-kitchen-500">No expired items found</p>
               </div>
             )}
           </TabsContent>
