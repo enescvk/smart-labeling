@@ -1,4 +1,3 @@
-
 import JsBarcode from 'jsbarcode';
 
 /**
@@ -46,28 +45,20 @@ export const generateBarcodeSvg = (
       const height = parseFloat(svgElement.getAttribute('height') || '100');
       
       // Set a new height to accommodate the additional text
-      const newHeight = height + 80; // Add extra space for product details
+      const newHeight = height + 25; // Add extra space for product details in a single line
       svgElement.setAttribute('height', `${newHeight}`);
       
-      // Create text elements for product details
-      const details = [
-        `Product: ${productDetails.product}`,
-        `Prepared By: ${productDetails.preparedBy}`,
-        `Container: ${productDetails.containerType}`,
-        `Prep Date: ${productDetails.preparedDate}`,
-        `Expires: ${productDetails.expiryDate}`
-      ];
+      // Create a single text element with all product details
+      const detailsText = `${productDetails.product} / ${productDetails.preparedBy} / ${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}`;
       
-      // Add each line of text
-      details.forEach((text, index) => {
-        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        textElement.setAttribute('x', '10');
-        textElement.setAttribute('y', `${height + 15 + (index * 15)}`);
-        textElement.setAttribute('font-size', '10');
-        textElement.setAttribute('font-family', 'Arial, sans-serif');
-        textElement.textContent = text;
-        svgElement.appendChild(textElement);
-      });
+      // Add the single line of text
+      const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textElement.setAttribute('x', '10');
+      textElement.setAttribute('y', `${height + 15}`);
+      textElement.setAttribute('font-size', '10');
+      textElement.setAttribute('font-family', 'Arial, sans-serif');
+      textElement.textContent = detailsText;
+      svgElement.appendChild(textElement);
     }
     
     return svg.outerHTML;
@@ -191,11 +182,7 @@ export const printBarcode = async (
               </div>
               ${productDetails ? `
                 <div class="product-details">
-                  <p><strong>Product:</strong> ${productDetails.product}</p>
-                  <p><strong>Prepared By:</strong> ${productDetails.preparedBy}</p>
-                  <p><strong>Container:</strong> ${productDetails.containerType}</p>
-                  <p><strong>Prep Date:</strong> ${productDetails.preparedDate}</p>
-                  <p><strong>Expires:</strong> ${productDetails.expiryDate}</p>
+                  <p>${productDetails.product} / ${productDetails.preparedBy} / ${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}</p>
                 </div>
               ` : ''}
             </div>
