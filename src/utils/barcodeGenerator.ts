@@ -14,7 +14,16 @@ export const generateBarcodeId = (): string => {
 /**
  * Generate a barcode SVG from a given ID
  */
-export const generateBarcodeSvg = (barcodeId: string): string => {
+export const generateBarcodeSvg = (
+  barcodeId: string,
+  productDetails?: {
+    product: string;
+    preparedBy: string;
+    containerType: string;
+    preparedDate: string;
+    expiryDate: string;
+  }
+): string => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   
   try {
@@ -28,6 +37,38 @@ export const generateBarcodeSvg = (barcodeId: string): string => {
       margin: 5,
       background: '#fff'
     });
+    
+    // If product details are provided, add them to the SVG
+    if (productDetails) {
+      // Get the current SVG dimensions
+      const svgElement = svg.querySelector('svg') || svg;
+      const width = parseFloat(svgElement.getAttribute('width') || '200');
+      const height = parseFloat(svgElement.getAttribute('height') || '100');
+      
+      // Set a new height to accommodate the additional text
+      const newHeight = height + 80; // Add extra space for product details
+      svgElement.setAttribute('height', `${newHeight}`);
+      
+      // Create text elements for product details
+      const details = [
+        `Product: ${productDetails.product}`,
+        `Prepared By: ${productDetails.preparedBy}`,
+        `Container: ${productDetails.containerType}`,
+        `Prep Date: ${productDetails.preparedDate}`,
+        `Expires: ${productDetails.expiryDate}`
+      ];
+      
+      // Add each line of text
+      details.forEach((text, index) => {
+        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textElement.setAttribute('x', '10');
+        textElement.setAttribute('y', `${height + 15 + (index * 15)}`);
+        textElement.setAttribute('font-size', '10');
+        textElement.setAttribute('font-family', 'Arial, sans-serif');
+        textElement.textContent = text;
+        svgElement.appendChild(textElement);
+      });
+    }
     
     return svg.outerHTML;
   } catch (error) {
@@ -84,7 +125,8 @@ export const printBarcode = async (
     expiryDate: string;
   }
 ) => {
-  const svgString = generateBarcodeSvg(barcodeId);
+  // Generate barcode SVG with product details
+  const svgString = generateBarcodeSvg(barcodeId, productDetails);
   try {
     const imageUrl = await svgToImage(svgString);
     

@@ -65,7 +65,16 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
     setTimeout(() => {
       const newBarcodeId = generateBarcodeId();
       setBarcodeId(newBarcodeId);
-      setBarcodeSvg(generateBarcodeSvg(newBarcodeId));
+      
+      // Generate barcode SVG with product details
+      const svg = generateBarcodeSvg(newBarcodeId, {
+        product: formData.product,
+        preparedBy: formData.preparedBy,
+        containerType: formData.containerType,
+        preparedDate: formData.preparedDate,
+        expiryDate: formData.expiryDate
+      });
+      setBarcodeSvg(svg);
       setIsGenerating(false);
       
       toast.success("Barcode generated successfully!");
