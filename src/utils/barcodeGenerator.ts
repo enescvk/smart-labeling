@@ -43,11 +43,11 @@ export const generateBarcodeSvg = (
       // Get the current SVG dimensions
       const svgElement = svg.querySelector('svg') || svg;
       // Set a wider width to ensure text fits
-      const width = Math.max(parseFloat(svgElement.getAttribute('width') || '200'), 300);
+      const width = Math.max(parseFloat(svgElement.getAttribute('width') || '200'), 350);
       const height = parseFloat(svgElement.getAttribute('height') || '100');
       
       // Set a new height to accommodate the additional text
-      const newHeight = height + 25; // Add extra space for product details
+      const newHeight = height + 30; // Add extra space for product details
       svgElement.setAttribute('width', `${width}`);
       svgElement.setAttribute('height', `${newHeight}`);
       
@@ -57,8 +57,8 @@ export const generateBarcodeSvg = (
       // Add the single line of text
       const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       textElement.setAttribute('x', '10');
-      textElement.setAttribute('y', `${height + 15}`);
-      textElement.setAttribute('font-size', '10');
+      textElement.setAttribute('y', `${height + 20}`);
+      textElement.setAttribute('font-size', '12');
       textElement.setAttribute('font-family', 'Arial, sans-serif');
       textElement.setAttribute('text-anchor', 'start'); // Align text to the left
       textElement.textContent = detailsText;
@@ -148,7 +148,7 @@ export const printBarcode = async (
                 border: 1px dashed #ccc;
                 padding: 15px;
                 text-align: center;
-                min-width: 300px;
+                min-width: 350px;
               }
               img {
                 max-width: 100%;
@@ -159,12 +159,13 @@ export const printBarcode = async (
                 color: #666;
               }
               .product-details {
-                margin-top: 5px;
-                font-size: 11px;
+                margin-top: 10px;
+                font-size: 12px;
                 color: #333;
                 text-align: left;
                 white-space: nowrap;
                 overflow: visible;
+                width: 100%;
               }
               .product-details p {
                 margin: 2px 0;
