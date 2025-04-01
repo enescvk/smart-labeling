@@ -1,3 +1,4 @@
+
 import JsBarcode from 'jsbarcode';
 
 /**
@@ -41,11 +42,13 @@ export const generateBarcodeSvg = (
     if (productDetails) {
       // Get the current SVG dimensions
       const svgElement = svg.querySelector('svg') || svg;
-      const width = parseFloat(svgElement.getAttribute('width') || '200');
+      // Set a wider width to ensure text fits
+      const width = Math.max(parseFloat(svgElement.getAttribute('width') || '200'), 300);
       const height = parseFloat(svgElement.getAttribute('height') || '100');
       
       // Set a new height to accommodate the additional text
-      const newHeight = height + 25; // Add extra space for product details in a single line
+      const newHeight = height + 25; // Add extra space for product details
+      svgElement.setAttribute('width', `${width}`);
       svgElement.setAttribute('height', `${newHeight}`);
       
       // Create a single text element with all product details
@@ -57,6 +60,7 @@ export const generateBarcodeSvg = (
       textElement.setAttribute('y', `${height + 15}`);
       textElement.setAttribute('font-size', '10');
       textElement.setAttribute('font-family', 'Arial, sans-serif');
+      textElement.setAttribute('text-anchor', 'start'); // Align text to the left
       textElement.textContent = detailsText;
       svgElement.appendChild(textElement);
     }
@@ -159,6 +163,8 @@ export const printBarcode = async (
                 font-size: 11px;
                 color: #333;
                 text-align: left;
+                white-space: nowrap;
+                overflow: visible;
               }
               .product-details p {
                 margin: 2px 0;
