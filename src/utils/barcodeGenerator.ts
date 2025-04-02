@@ -1,3 +1,4 @@
+
 import JsBarcode from 'jsbarcode';
 
 /**
@@ -42,21 +43,32 @@ export const generateBarcodeSvg = (
       // Get the current SVG dimensions
       const svgElement = svg.querySelector('svg') || svg;
       const width = parseFloat(svgElement.getAttribute('width') || '200');
-      const height = parseFloat(svgElement.getAttribute('height') || '100');
       
-      // Set a new height to accommodate the additional text
-      const newHeight = height + 25; // Add extra space for product details in a single line
+      // We'll add the product details right below the barcode ID, with minimal extra space
+      // First find where the barcode ID text is - it's typically at the bottom of the barcode
+      const barcodeText = svgElement.querySelector('text');
+      let barcodeTextY = 0;
+      
+      if (barcodeText) {
+        barcodeTextY = parseFloat(barcodeText.getAttribute('y') || '0');
+      }
+      
+      // Set a new height that's just enough to accommodate the text
+      // Adding only 20px of extra space below the barcode ID
+      const newHeight = barcodeTextY + 30;
       svgElement.setAttribute('height', `${newHeight}`);
+      svgElement.setAttribute('width', `${width}`);
       
       // Create a single text element with all product details
       const detailsText = `${productDetails.product} / ${productDetails.preparedBy} / ${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}`;
       
-      // Add the single line of text
+      // Position the text just 15px below the barcode ID text
       const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       textElement.setAttribute('x', '10');
-      textElement.setAttribute('y', `${height + 15}`);
+      textElement.setAttribute('y', `${barcodeTextY + 20}`);
       textElement.setAttribute('font-size', '10');
       textElement.setAttribute('font-family', 'Arial, sans-serif');
+      textElement.setAttribute('text-anchor', 'start');
       textElement.textContent = detailsText;
       svgElement.appendChild(textElement);
     }

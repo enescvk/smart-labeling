@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -216,7 +215,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex-1 flex items-center justify-center p-4 border border-dashed border-kitchen-200 rounded-md bg-kitchen-50"
+              className="flex-1 flex items-center justify-center p-4 border border-dashed border-kitchen-200 rounded-md bg-kitchen-50 overflow-visible"
               dangerouslySetInnerHTML={{ __html: barcodeSvg }}
             />
             
