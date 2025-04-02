@@ -1,4 +1,3 @@
-
 import JsBarcode from 'jsbarcode';
 
 /**
@@ -27,15 +26,15 @@ export const generateBarcodeSvg = (
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   
   try {
-    // Adjust barcode size when we have product details
+    // More compact barcode when we have product details
     const barcodeOptions = {
       format: 'CODE128',
       lineColor: '#000',
       width: 2,
-      height: productDetails ? 40 : 50, // Reduce barcode height when we have details
+      height: productDetails ? 30 : 50, // Smaller barcode when we have details
       displayValue: true,
-      fontSize: productDetails ? 10 : 12, // Slightly smaller font for barcode ID when we have details
-      margin: productDetails ? 3 : 5, // Reduce margins when we have details
+      fontSize: 10, // Smaller font for barcode ID
+      margin: 2, // Minimal margins
       background: '#fff'
     };
     
@@ -45,7 +44,6 @@ export const generateBarcodeSvg = (
     if (productDetails) {
       // Get the current SVG dimensions
       const svgElement = svg.querySelector('svg') || svg;
-      const width = parseFloat(svgElement.getAttribute('width') || '200');
       
       // Find where the barcode ID text is
       const barcodeText = svgElement.querySelector('text');
@@ -53,34 +51,56 @@ export const generateBarcodeSvg = (
       
       if (barcodeText) {
         barcodeTextY = parseFloat(barcodeText.getAttribute('y') || '0');
-        
-        // Make the font of the barcode ID slightly smaller
-        barcodeText.setAttribute('font-size', '10');
+        // Make the barcode ID font smaller
+        barcodeText.setAttribute('font-size', '9');
       }
       
-      // Create an array of text segments to display in multiple lines
+      // Format dates for better display
+      const formatDate = (dateStr: string) => {
+        try {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+          });
+        } catch (e) {
+          return dateStr;
+        }
+      };
+      
+      // Create product info lines with clear labeling
       const productInfo = [
-        `${productDetails.product} / ${productDetails.preparedBy}`,
-        `${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}`
+        `Product: ${productDetails.product}`,
+        `Prepared By: ${productDetails.preparedBy}`,
+        `Container: ${productDetails.containerType}`,
+        `Prep Date: ${formatDate(productDetails.preparedDate)}`,
+        `Expires: ${formatDate(productDetails.expiryDate)}`
       ];
       
-      // Calculate the height needed for our text
-      const lineHeight = 15;
+      // Calculate needed dimensions
+      const lineHeight = 14;
       const totalTextHeight = lineHeight * productInfo.length;
+      const textPadding = 10;
       
-      // Set a new height that accommodates all the text with padding
-      const newHeight = barcodeTextY + totalTextHeight + 15; // 15px padding at bottom
-      const paddedWidth = Math.max(width, 350); // Ensure minimum width to fit all text
+      // Calculate minimum width needed
+      const maxTextWidth = Math.max(...productInfo.map(text => text.length * 6)); // Approximate width based on text length
+      const minRequiredWidth = Math.max(maxTextWidth + 20, 300);
       
+      // Get current width and ensure it's at least our minimum
+      const width = Math.max(parseFloat(svgElement.getAttribute('width') || '200'), minRequiredWidth);
+      
+      // Set new dimensions
+      const newHeight = barcodeTextY + totalTextHeight + textPadding;
       svgElement.setAttribute('height', `${newHeight}`);
-      svgElement.setAttribute('width', `${paddedWidth}`);
+      svgElement.setAttribute('width', `${width}`);
       
       // Add each line of text
       productInfo.forEach((text, index) => {
         const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        textElement.setAttribute('x', '6');
+        textElement.setAttribute('x', '6'); // Align text to the left with small padding
         textElement.setAttribute('y', `${barcodeTextY + 15 + (index * lineHeight)}`);
-        textElement.setAttribute('font-size', '10');
+        textElement.setAttribute('font-size', '11'); // Slightly larger font for product details
         textElement.setAttribute('font-family', 'Arial, sans-serif');
         textElement.setAttribute('text-anchor', 'start');
         textElement.textContent = text;
