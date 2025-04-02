@@ -53,24 +53,32 @@ export const generateBarcodeSvg = (
         barcodeTextY = parseFloat(barcodeText.getAttribute('y') || '0');
       }
       
-      // Set a new height that's just enough to accommodate the text
-      // Adding only 15px of extra space below the barcode ID
-      const newHeight = barcodeTextY + 25;
+      // Create an array of text segments to potentially display in multiple lines
+      const productInfo = [
+        `${productDetails.product} / ${productDetails.preparedBy}`,
+        `${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}`
+      ];
+      
+      // Calculate the height needed for our text
+      const lineHeight = 15;
+      const totalTextHeight = lineHeight * productInfo.length;
+      
+      // Set a new height that accommodates all the text
+      const newHeight = barcodeTextY + totalTextHeight + 15; // 15px padding at bottom
       svgElement.setAttribute('height', `${newHeight}`);
       svgElement.setAttribute('width', `${width}`);
       
-      // Create a single text element with all product details
-      const detailsText = `${productDetails.product} / ${productDetails.preparedBy} / ${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}`;
-      
-      // Position the text just 15px below the barcode ID text and 4px to the left
-      const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      textElement.setAttribute('x', '6');
-      textElement.setAttribute('y', `${barcodeTextY + 15}`);
-      textElement.setAttribute('font-size', '10');
-      textElement.setAttribute('font-family', 'Arial, sans-serif');
-      textElement.setAttribute('text-anchor', 'start');
-      textElement.textContent = detailsText;
-      svgElement.appendChild(textElement);
+      // Add each line of text
+      productInfo.forEach((text, index) => {
+        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textElement.setAttribute('x', '6');
+        textElement.setAttribute('y', `${barcodeTextY + 15 + (index * lineHeight)}`);
+        textElement.setAttribute('font-size', '10');
+        textElement.setAttribute('font-family', 'Arial, sans-serif');
+        textElement.setAttribute('text-anchor', 'start');
+        textElement.textContent = text;
+        svgElement.appendChild(textElement);
+      });
     }
     
     return svg.outerHTML;
