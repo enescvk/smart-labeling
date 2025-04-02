@@ -27,16 +27,19 @@ export const generateBarcodeSvg = (
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   
   try {
-    JsBarcode(svg, barcodeId, {
+    // Adjust barcode size when we have product details
+    const barcodeOptions = {
       format: 'CODE128',
       lineColor: '#000',
       width: 2,
-      height: 50,
+      height: productDetails ? 40 : 50, // Reduce barcode height when we have details
       displayValue: true,
-      fontSize: 12,
-      margin: 5,
+      fontSize: productDetails ? 10 : 12, // Slightly smaller font for barcode ID when we have details
+      margin: productDetails ? 3 : 5, // Reduce margins when we have details
       background: '#fff'
-    });
+    };
+    
+    JsBarcode(svg, barcodeId, barcodeOptions);
     
     // If product details are provided, add them to the SVG
     if (productDetails) {
@@ -44,16 +47,18 @@ export const generateBarcodeSvg = (
       const svgElement = svg.querySelector('svg') || svg;
       const width = parseFloat(svgElement.getAttribute('width') || '200');
       
-      // We'll add the product details right below the barcode ID, with minimal extra space
-      // First find where the barcode ID text is - it's typically at the bottom of the barcode
+      // Find where the barcode ID text is
       const barcodeText = svgElement.querySelector('text');
       let barcodeTextY = 0;
       
       if (barcodeText) {
         barcodeTextY = parseFloat(barcodeText.getAttribute('y') || '0');
+        
+        // Make the font of the barcode ID slightly smaller
+        barcodeText.setAttribute('font-size', '10');
       }
       
-      // Create an array of text segments to potentially display in multiple lines
+      // Create an array of text segments to display in multiple lines
       const productInfo = [
         `${productDetails.product} / ${productDetails.preparedBy}`,
         `${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}`
@@ -63,10 +68,12 @@ export const generateBarcodeSvg = (
       const lineHeight = 15;
       const totalTextHeight = lineHeight * productInfo.length;
       
-      // Set a new height that accommodates all the text
+      // Set a new height that accommodates all the text with padding
       const newHeight = barcodeTextY + totalTextHeight + 15; // 15px padding at bottom
+      const paddedWidth = Math.max(width, 350); // Ensure minimum width to fit all text
+      
       svgElement.setAttribute('height', `${newHeight}`);
-      svgElement.setAttribute('width', `${width}`);
+      svgElement.setAttribute('width', `${paddedWidth}`);
       
       // Add each line of text
       productInfo.forEach((text, index) => {
