@@ -73,25 +73,19 @@ export const generateBarcodeSvg = (
       
       // Calculate height to add sufficient space for the product info line
       const currentHeight = parseFloat(svgElement.getAttribute('height') || '100');
-      const extraSpace = 40; // Increased from 30 to 40 for more padding
+      const extraSpace = 25; // Reduced from 40 to 25 to bring text closer to barcode ID
       const newHeight = currentHeight + extraSpace;
       svgElement.setAttribute('height', `${newHeight}`);
       
-      // Add the product info line text
-      const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      textElement.setAttribute('x', `${width / 2}`); // Center text
-      textElement.setAttribute('y', `${currentHeight + 25}`); // Better positioning below barcode text
-      textElement.setAttribute('font-size', '14'); // Clear font size
-      textElement.setAttribute('font-family', 'Arial, sans-serif');
-      textElement.setAttribute('text-anchor', 'middle'); // Center align text
-      textElement.setAttribute('font-weight', 'bold'); // Make text bold
+      // Position the product info line closer to the barcode ID
+      const textY = barcodeTextY + 20; // Position 20px below the barcode ID text
       
       // Add a white background rectangle behind the text for better visibility
       const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       const padding = 10;
       const textWidth = productInfoLine.length * 7.5; // Estimate text width
       bgRect.setAttribute('x', `${(width - textWidth) / 2 - padding}`);
-      bgRect.setAttribute('y', `${currentHeight + 12}`); // Placed just above text
+      bgRect.setAttribute('y', `${textY - 15}`); // Position just above text
       bgRect.setAttribute('width', `${textWidth + (padding * 2)}`);
       bgRect.setAttribute('height', '20');
       bgRect.setAttribute('fill', 'white');
@@ -99,6 +93,15 @@ export const generateBarcodeSvg = (
       
       // Add the elements in correct order (background first, then text)
       svgElement.appendChild(bgRect);
+      
+      // Add the product info line text
+      const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textElement.setAttribute('x', `${width / 2}`); // Center text
+      textElement.setAttribute('y', `${textY}`); // Position closer to barcode ID
+      textElement.setAttribute('font-size', '14'); // Clear font size
+      textElement.setAttribute('font-family', 'Arial, sans-serif');
+      textElement.setAttribute('text-anchor', 'middle'); // Center align text
+      textElement.setAttribute('font-weight', 'bold'); // Make text bold
       
       // Set text content and add to SVG
       textElement.textContent = productInfoLine;
