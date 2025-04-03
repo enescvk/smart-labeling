@@ -11,6 +11,28 @@ export const generateBarcodeId = (): string => {
 };
 
 /**
+ * Get initials from a name
+ */
+const getInitials = (name: string): string => {
+  return name
+    .split(' ')
+    .map(part => part.charAt(0))
+    .join('');
+};
+
+/**
+ * Format a date to YYYY-MM-DD format
+ */
+const formatDateString = (dateStr: string): string => {
+  try {
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+/**
  * Generate a barcode SVG from a given ID
  */
 export const generateBarcodeSvg = (
@@ -26,15 +48,15 @@ export const generateBarcodeSvg = (
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   
   try {
-    // More compact barcode when we have product details
+    // Configure barcode options
     const barcodeOptions = {
       format: 'CODE128',
       lineColor: '#000',
       width: 2,
-      height: productDetails ? 30 : 50, // Smaller barcode when we have details
+      height: 50,
       displayValue: true,
-      fontSize: 10, // Smaller font for barcode ID
-      margin: 2, // Minimal margins
+      fontSize: 12,
+      margin: 5,
       background: '#fff'
     };
     
@@ -51,61 +73,37 @@ export const generateBarcodeSvg = (
       
       if (barcodeText) {
         barcodeTextY = parseFloat(barcodeText.getAttribute('y') || '0');
-        // Make the barcode ID font smaller
-        barcodeText.setAttribute('font-size', '9');
       }
       
-      // Format dates for better display
-      const formatDate = (dateStr: string) => {
-        try {
-          const date = new Date(dateStr);
-          return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
-          });
-        } catch (e) {
-          return dateStr;
-        }
-      };
+      // Format product info into a single line with initials
+      const preparedByInitials = getInitials(productDetails.preparedBy);
+      const formattedPrepDate = formatDateString(productDetails.preparedDate);
+      const formattedExpDate = formatDateString(productDetails.expiryDate);
       
-      // Create product info lines with clear labeling
-      const productInfo = [
-        `Product: ${productDetails.product}`,
-        `Prepared By: ${productDetails.preparedBy}`,
-        `Container: ${productDetails.containerType}`,
-        `Prep Date: ${formatDate(productDetails.preparedDate)}`,
-        `Expires: ${formatDate(productDetails.expiryDate)}`
-      ];
+      const productInfoLine = `${productDetails.product} / ${preparedByInitials} / ${formattedPrepDate} / ${formattedExpDate}`;
       
-      // Calculate needed dimensions
-      const lineHeight = 14;
-      const totalTextHeight = lineHeight * productInfo.length;
-      const textPadding = 10;
+      // Calculate dimensions
+      const minWidth = Math.max(productInfoLine.length * 7, 300); // Estimate width based on text length
+      const currentWidth = parseFloat(svgElement.getAttribute('width') || '200');
+      const width = Math.max(currentWidth, minWidth);
       
-      // Calculate minimum width needed
-      const maxTextWidth = Math.max(...productInfo.map(text => text.length * 6)); // Approximate width based on text length
-      const minRequiredWidth = Math.max(maxTextWidth + 20, 300);
-      
-      // Get current width and ensure it's at least our minimum
-      const width = Math.max(parseFloat(svgElement.getAttribute('width') || '200'), minRequiredWidth);
-      
-      // Set new dimensions
-      const newHeight = barcodeTextY + totalTextHeight + textPadding;
-      svgElement.setAttribute('height', `${newHeight}`);
+      // Set width to accommodate the product info line
       svgElement.setAttribute('width', `${width}`);
       
-      // Add each line of text
-      productInfo.forEach((text, index) => {
-        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        textElement.setAttribute('x', '6'); // Align text to the left with small padding
-        textElement.setAttribute('y', `${barcodeTextY + 15 + (index * lineHeight)}`);
-        textElement.setAttribute('font-size', '11'); // Slightly larger font for product details
-        textElement.setAttribute('font-family', 'Arial, sans-serif');
-        textElement.setAttribute('text-anchor', 'start');
-        textElement.textContent = text;
-        svgElement.appendChild(textElement);
-      });
+      // Calculate height to add space for the product info line
+      const currentHeight = parseFloat(svgElement.getAttribute('height') || '100');
+      const newHeight = currentHeight + 25; // Add space for the product info line
+      svgElement.setAttribute('height', `${newHeight}`);
+      
+      // Add the product info line text
+      const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textElement.setAttribute('x', `${width / 2}`); // Center text
+      textElement.setAttribute('y', `${currentHeight + 15}`); // Position below barcode text
+      textElement.setAttribute('font-size', '12');
+      textElement.setAttribute('font-family', 'Arial, sans-serif');
+      textElement.setAttribute('text-anchor', 'middle'); // Center align text
+      textElement.textContent = productInfoLine;
+      svgElement.appendChild(textElement);
     }
     
     return svg.outerHTML;
