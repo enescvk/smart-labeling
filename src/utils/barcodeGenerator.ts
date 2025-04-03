@@ -1,3 +1,4 @@
+
 import JsBarcode from 'jsbarcode';
 
 /**
@@ -92,16 +93,17 @@ export const generateBarcodeSvg = (
       
       // Calculate height to add space for the product info line
       const currentHeight = parseFloat(svgElement.getAttribute('height') || '100');
-      const newHeight = currentHeight + 25; // Add space for the product info line
+      const newHeight = currentHeight + 30; // Add extra space for the product info line
       svgElement.setAttribute('height', `${newHeight}`);
       
       // Add the product info line text
       const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       textElement.setAttribute('x', `${width / 2}`); // Center text
-      textElement.setAttribute('y', `${currentHeight + 15}`); // Position below barcode text
-      textElement.setAttribute('font-size', '12');
+      textElement.setAttribute('y', `${currentHeight + 20}`); // Position below barcode text with extra space
+      textElement.setAttribute('font-size', '14'); // Increase font size
       textElement.setAttribute('font-family', 'Arial, sans-serif');
       textElement.setAttribute('text-anchor', 'middle'); // Center align text
+      textElement.setAttribute('font-weight', 'bold'); // Make text bold
       textElement.textContent = productInfoLine;
       svgElement.appendChild(textElement);
     }
@@ -166,6 +168,13 @@ export const printBarcode = async (
   try {
     const imageUrl = await svgToImage(svgString);
     
+    // Format product info for display
+    const preparedByInitials = productDetails ? getInitials(productDetails.preparedBy) : '';
+    const formattedPrepDate = productDetails ? formatDateString(productDetails.preparedDate) : '';
+    const formattedExpDate = productDetails ? formatDateString(productDetails.expiryDate) : '';
+    const productInfoLine = productDetails ? 
+      `${productDetails.product} / ${preparedByInitials} / ${formattedPrepDate} / ${formattedExpDate}` : '';
+    
     // In a real application, send to printer
     // For demo, we'll open in a new window/tab
     const printWindow = window.open('', '_blank');
@@ -201,9 +210,10 @@ export const printBarcode = async (
               }
               .product-details {
                 margin-top: 5px;
-                font-size: 11px;
+                font-size: 12px;
                 color: #333;
-                text-align: left;
+                text-align: center;
+                font-weight: bold;
               }
               .product-details p {
                 margin: 2px 0;
@@ -225,9 +235,9 @@ export const printBarcode = async (
               <div class="info">
                 Barcode ID: ${barcodeId}
               </div>
-              ${productDetails ? `
+              ${productInfoLine ? `
                 <div class="product-details">
-                  <p>${productDetails.product} / ${productDetails.preparedBy} / ${productDetails.containerType} / ${productDetails.preparedDate} / ${productDetails.expiryDate}</p>
+                  <p>${productInfoLine}</p>
                 </div>
               ` : ''}
             </div>

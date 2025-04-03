@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -217,7 +218,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 flex items-center justify-center p-4 border border-dashed border-kitchen-200 rounded-md bg-kitchen-50 mb-4"
               style={{ 
-                minHeight: "260px", 
+                minHeight: "300px", // Increased height
                 maxWidth: "100%", 
                 overflow: "auto",
                 display: "flex",
