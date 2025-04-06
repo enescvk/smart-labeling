@@ -73,35 +73,36 @@ export const generateBarcodeSvg = (
       
       // Calculate height to add sufficient space for the product info line
       const currentHeight = parseFloat(svgElement.getAttribute('height') || '100');
-      const extraSpace = 20; // Reduced further from 25 to 20 to bring text even closer to barcode ID
+      const extraSpace = 25; // Added more space to ensure no overlap
       const newHeight = currentHeight + extraSpace;
       svgElement.setAttribute('height', `${newHeight}`);
       
-      // Position the product info line closer to the barcode ID
-      const textY = barcodeTextY + 16; // Position 16px below the barcode ID text (reduced from 20px)
+      // Position the product info line with more distance from the barcode ID
+      const textY = barcodeTextY + 24; // Increased from 16px to 24px for more separation
       
       // Add a white background rectangle behind the text for better visibility
+      // Position it lower to avoid overlapping with barcode ID
       const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      const padding = 8; // Reduced padding from 10 to 8
-      const textWidth = productInfoLine.length * 6; // Reduced from 7.5 to 6 due to smaller font size
+      const padding = 6; // Reduced padding further
+      const textWidth = productInfoLine.length * 5; // Reduced width estimate for smaller font
       bgRect.setAttribute('x', `${(width - textWidth) / 2 - padding}`);
-      bgRect.setAttribute('y', `${textY - 12}`); // Position just above text (adjusted for smaller font)
+      bgRect.setAttribute('y', `${textY - 10}`); // Adjusted position to be lower
       bgRect.setAttribute('width', `${textWidth + (padding * 2)}`);
-      bgRect.setAttribute('height', '16'); // Reduced from 20 to 16 for smaller font
+      bgRect.setAttribute('height', '14'); // Reduced height for smaller text
       bgRect.setAttribute('fill', 'white');
-      bgRect.setAttribute('rx', '3'); // Rounded corners
+      bgRect.setAttribute('rx', '2'); // Smaller rounded corners
       
       // Add the elements in correct order (background first, then text)
       svgElement.appendChild(bgRect);
       
-      // Add the product info line text
+      // Add the product info line text with smaller font size
       const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       textElement.setAttribute('x', `${width / 2}`); // Center text
-      textElement.setAttribute('y', `${textY}`); // Position closer to barcode ID
-      textElement.setAttribute('font-size', '12'); // Reduced from 14 to 12
+      textElement.setAttribute('y', `${textY}`); // Position farther from barcode ID
+      textElement.setAttribute('font-size', '10'); // Reduced from 12 to 10 for smaller text
       textElement.setAttribute('font-family', 'Arial, sans-serif');
       textElement.setAttribute('text-anchor', 'middle'); // Center align text
-      // Removed the font-weight: bold attribute
+      textElement.setAttribute('fill', '#666'); // Lighter text color for less prominence
       
       // Set text content and add to SVG
       textElement.textContent = productInfoLine;
