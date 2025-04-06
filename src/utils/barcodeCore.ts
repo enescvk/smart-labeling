@@ -37,7 +37,8 @@ export const generateBarcodeSvg = (
       displayValue: true,
       fontSize: 12,
       margin: 5,
-      background: '#fff'
+      background: '#fff',
+      marginTop: 15 // Add margin at the top to shift everything down a bit
     };
     
     JsBarcode(svg, barcodeId, barcodeOptions);
@@ -61,6 +62,8 @@ export const generateBarcodeSvg = (
       
       if (barcodeText) {
         barcodeTextY = parseFloat(barcodeText.getAttribute('y') || '0');
+        // Move barcode text up by 10px
+        barcodeText.setAttribute('y', `${barcodeTextY - 10}`);
       }
       
       // Calculate dimensions
@@ -77,8 +80,8 @@ export const generateBarcodeSvg = (
       const newHeight = currentHeight + extraSpace;
       svgElement.setAttribute('height', `${newHeight}`);
       
-      // Position the product info line closer to the barcode ID
-      const textY = barcodeTextY + 18; // Position 18px below the barcode ID text
+      // Position the product info line closer to the barcode ID but moved up 10px
+      const textY = (barcodeTextY - 10) + 18; // Position 18px below the barcode ID text, but shifted up 10px
       
       // Add a white background rectangle behind the text for better visibility
       const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -97,7 +100,7 @@ export const generateBarcodeSvg = (
       // Add the product info line text
       const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       textElement.setAttribute('x', `${width / 2}`); // Center text
-      textElement.setAttribute('y', `${textY}`);
+      textElement.setAttribute('y', `${textY}`); 
       textElement.setAttribute('font-size', '9'); // Reduced from 10 to 9 for smaller text
       textElement.setAttribute('font-family', 'Arial, sans-serif');
       textElement.setAttribute('text-anchor', 'middle'); // Center align text
@@ -106,6 +109,15 @@ export const generateBarcodeSvg = (
       // Set text content and add to SVG
       textElement.textContent = productInfoLine;
       svgElement.appendChild(textElement);
+      
+      // Move the barcode itself up by 10px
+      const barcodeRects = svgElement.querySelectorAll('rect');
+      barcodeRects.forEach(rect => {
+        if (rect !== bgRect) {
+          const y = parseFloat(rect.getAttribute('y') || '0');
+          rect.setAttribute('y', `${y - 10}`);
+        }
+      });
     }
     
     return svg.outerHTML;
