@@ -73,21 +73,21 @@ export const generateBarcodeSvg = (
       
       // Calculate height to add sufficient space for the product info line
       const currentHeight = parseFloat(svgElement.getAttribute('height') || '100');
-      const extraSpace = 25; // Reduced from 40 to 25 to bring text closer to barcode ID
+      const extraSpace = 20; // Reduced further from 25 to 20 to bring text even closer to barcode ID
       const newHeight = currentHeight + extraSpace;
       svgElement.setAttribute('height', `${newHeight}`);
       
       // Position the product info line closer to the barcode ID
-      const textY = barcodeTextY + 20; // Position 20px below the barcode ID text
+      const textY = barcodeTextY + 16; // Position 16px below the barcode ID text (reduced from 20px)
       
       // Add a white background rectangle behind the text for better visibility
       const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      const padding = 10;
-      const textWidth = productInfoLine.length * 7.5; // Estimate text width
+      const padding = 8; // Reduced padding from 10 to 8
+      const textWidth = productInfoLine.length * 6; // Reduced from 7.5 to 6 due to smaller font size
       bgRect.setAttribute('x', `${(width - textWidth) / 2 - padding}`);
-      bgRect.setAttribute('y', `${textY - 15}`); // Position just above text
+      bgRect.setAttribute('y', `${textY - 12}`); // Position just above text (adjusted for smaller font)
       bgRect.setAttribute('width', `${textWidth + (padding * 2)}`);
-      bgRect.setAttribute('height', '20');
+      bgRect.setAttribute('height', '16'); // Reduced from 20 to 16 for smaller font
       bgRect.setAttribute('fill', 'white');
       bgRect.setAttribute('rx', '3'); // Rounded corners
       
@@ -98,10 +98,10 @@ export const generateBarcodeSvg = (
       const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       textElement.setAttribute('x', `${width / 2}`); // Center text
       textElement.setAttribute('y', `${textY}`); // Position closer to barcode ID
-      textElement.setAttribute('font-size', '14'); // Clear font size
+      textElement.setAttribute('font-size', '12'); // Reduced from 14 to 12
       textElement.setAttribute('font-family', 'Arial, sans-serif');
       textElement.setAttribute('text-anchor', 'middle'); // Center align text
-      textElement.setAttribute('font-weight', 'bold'); // Make text bold
+      // Removed the font-weight: bold attribute
       
       // Set text content and add to SVG
       textElement.textContent = productInfoLine;
