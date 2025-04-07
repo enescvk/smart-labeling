@@ -1,5 +1,5 @@
 
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO, subDays } from "date-fns";
 
 export interface InventoryItem {
   id: string;
@@ -10,18 +10,6 @@ export interface InventoryItem {
   status: 'active' | 'used';
   createdAt: string;
 }
-
-// Generate a random date in the future (1-7 days)
-const getRandomFutureDate = (baseDate: Date = new Date()): string => {
-  const daysToAdd = Math.floor(Math.random() * 7) + 1;
-  return format(addDays(baseDate, daysToAdd), 'yyyy-MM-dd');
-};
-
-// Generate a random date in the past (1-7 days)
-const getRandomPastDate = (): string => {
-  const daysToSubtract = Math.floor(Math.random() * 7) + 1;
-  return format(addDays(new Date(), -daysToSubtract), 'yyyy-MM-dd');
-};
 
 // Staff names
 const staffNames = [
@@ -48,8 +36,21 @@ const products = [
   'Lemon Juice',
   'Olive Oil Mix',
   'Mayonnaise',
-  'BBQ Sauce'
+  'BBQ Sauce',
+  'Cumin' // Added Cumin to the product list
 ];
+
+// Generate a random date in the future (1-7 days)
+const getRandomFutureDate = (baseDate: Date = new Date()): string => {
+  const daysToAdd = Math.floor(Math.random() * 7) + 1;
+  return format(addDays(baseDate, daysToAdd), 'yyyy-MM-dd');
+};
+
+// Generate a random date in the past (1-7 days)
+const getRandomPastDate = (): string => {
+  const daysToSubtract = Math.floor(Math.random() * 7) + 1;
+  return format(addDays(new Date(), -daysToSubtract), 'yyyy-MM-dd');
+};
 
 // Generate a random inventory item
 const generateRandomItem = (id: string, status: 'active' | 'used' = 'active'): InventoryItem => {
@@ -86,8 +87,47 @@ export const generateMockInventory = (count: number): InventoryItem[] => {
   return items;
 };
 
+// Function to generate Cumin data for March 2025
+const generateCuminData = (): InventoryItem[] => {
+  const cuminItems: InventoryItem[] = [];
+  const march2025 = new Date(2025, 2, 1); // March is month 2 (0-indexed)
+  
+  for (let i = 0; i < 20; i++) {
+    // Generate a random day in March (1-31)
+    const day = Math.floor(Math.random() * 31) + 1;
+    const prepDay = Math.min(day, 28); // Ensure prepared date is in March
+    const expDay = Math.min(day + 3, 31); // Expiration a few days later
+    
+    // Create prepared and expiry dates
+    const preparedDate = `2025-03-${prepDay.toString().padStart(2, '0')}`;
+    const expiryDate = `2025-03-${expDay.toString().padStart(2, '0')}`;
+    
+    // Create createdAt timestamp with time
+    const createdAt = `2025-03-${prepDay.toString().padStart(2, '0')} ${Math.floor(Math.random() * 24).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+    
+    // Random staff
+    const preparedBy = staffNames[Math.floor(Math.random() * staffNames.length)];
+    
+    // Create the item
+    cuminItems.push({
+      id: `cumin-${i+1}`,
+      product: 'Cumin',
+      preparedBy,
+      preparedDate,
+      expiryDate,
+      status: 'active',
+      createdAt
+    });
+  }
+  
+  return cuminItems;
+};
+
 // Initial mock data (12 items)
-export const mockInventory: InventoryItem[] = generateMockInventory(12);
+export const mockInventory: InventoryItem[] = [
+  ...generateMockInventory(12),
+  ...generateCuminData() // Add 20 Cumin items
+];
 
 // Get recent items (last 5)
 export const getRecentItems = (): InventoryItem[] => {
@@ -104,4 +144,15 @@ export const getExpiringItems = (): InventoryItem[] => {
       new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()
     )
     .slice(0, 5);
+};
+
+// Get expired items
+export const getExpiredItems = (): InventoryItem[] => {
+  const today = new Date();
+  return mockInventory.filter(item => new Date(item.expiryDate) < today);
+};
+
+// Get active inventory items
+export const getActiveInventoryItems = (): InventoryItem[] => {
+  return mockInventory.filter(item => item.status === 'active');
 };
