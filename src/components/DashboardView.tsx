@@ -49,7 +49,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items }) => {
     // Filter items by selected product and period
     const filteredItems = items.filter(item => {
       // Parse date string to Date object for comparison
-      const itemDate = new Date(item.created_at);
+      const itemDate = new Date(item.createdAt);
       
       // Filter by product if a specific one is selected
       const productMatch = selectedProduct === "all" || item.product === selectedProduct;
@@ -75,7 +75,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items }) => {
 
     // Group items by month and product
     filteredItems.forEach(item => {
-      const itemMonth = format(new Date(item.created_at), "MMM yyyy");
+      const itemMonth = format(new Date(item.createdAt), "MMM yyyy");
       if (months.includes(itemMonth)) {
         if (!monthlyData[itemMonth][item.product]) {
           monthlyData[itemMonth][item.product] = 0;
