@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn } from "lucide-react";
+import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,6 +45,12 @@ export const Navbar: React.FC = () => {
       label: "History",
       icon: HistoryIcon,
       active: location.pathname === "/history",
+    },
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      active: location.pathname === "/dashboard",
     },
   ];
 

@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import CreateLabel from "./pages/CreateLabel";
 import ScanBarcode from "./pages/ScanBarcode";
 import History from "./pages/History";
+import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
@@ -54,6 +55,11 @@ const App = () => {
                 <Route path="/history" element={
                   <PrivateRoute>
                     <History />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <PrivateRoute>
+                    <Dashboard />
                   </PrivateRoute>
                 } />
                 <Route path="/auth" element={<Auth />} />
