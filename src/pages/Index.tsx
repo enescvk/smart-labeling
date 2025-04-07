@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { InventoryCard } from "../components/InventoryCard";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Barcode, Clock, Search, ShoppingBag, AlertTriangle } from "lucide-react";
+import { Barcode, Clock, Search, ShoppingBag, AlertTriangle, BarChart } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -15,6 +15,7 @@ import {
   getExpiredItems,
   InventoryItem 
 } from "../services/inventoryService";
+import { DashboardView } from "../components/DashboardView";
 
 const Index: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -100,6 +101,7 @@ const Index: React.FC = () => {
           </motion.p>
         </header>
         
+        {/* Stats Cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((index) => (
@@ -196,8 +198,13 @@ const Index: React.FC = () => {
             <TabsTrigger value="recent">Recent</TabsTrigger>
             <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
             <TabsTrigger value="expired">Expired</TabsTrigger>
+            <TabsTrigger value="dashboard">
+              <BarChart className="h-4 w-4 mr-1" />
+              Dashboard
+            </TabsTrigger>
           </TabsList>
           
+          {/* Overview Tab */}
           <TabsContent value="overview" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -232,6 +239,7 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
+          {/* Recent Tab */}
           <TabsContent value="recent" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -266,6 +274,7 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
+          {/* Expiring Tab */}
           <TabsContent value="expiring" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -300,6 +309,7 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
+          {/* Expired Tab */}
           <TabsContent value="expired" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -332,6 +342,11 @@ const Index: React.FC = () => {
                 <p className="text-kitchen-500">No expired items found</p>
               </div>
             )}
+          </TabsContent>
+          
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="mt-0">
+            <DashboardView items={[...activeItems, ...expiredItems]} />
           </TabsContent>
         </Tabs>
       </div>
