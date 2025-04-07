@@ -80,8 +80,8 @@ export const generateBarcodeSvg = (
       const newHeight = currentHeight + extraSpace;
       svgElement.setAttribute('height', `${newHeight}`);
       
-      // Position the product info line closer to the barcode ID but moved up 10px
-      const textY = (barcodeTextY - 10) + 18; // Position 18px below the barcode ID text, but shifted up 10px
+      // Position the product info line at its original position (not moved up)
+      const textY = barcodeTextY + 18; // Keep at original position
       
       // Add a white background rectangle behind the text for better visibility
       const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -113,7 +113,7 @@ export const generateBarcodeSvg = (
       // Move the barcode itself up by 10px
       const barcodeRects = svgElement.querySelectorAll('rect');
       barcodeRects.forEach(rect => {
-        if (rect !== bgRect) {
+        if (rect !== bgRect) { // Skip the background rectangle for product info
           const y = parseFloat(rect.getAttribute('y') || '0');
           rect.setAttribute('y', `${y - 10}`);
         }
