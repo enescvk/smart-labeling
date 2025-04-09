@@ -392,7 +392,7 @@ const Settings = () => {
                             <div>
                               <h3 className="font-medium">{restaurant.name}</h3>
                               <p className="text-xs text-muted-foreground">
-                                Created on {new Date(restaurant.createdAt).toLocaleDateString()}
+                                Created on {new Date(restaurant.created_at).toLocaleDateString()}
                               </p>
                             </div>
                             <div>
