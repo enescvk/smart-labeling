@@ -41,6 +41,7 @@ export const getUserRestaurants = async (): Promise<Restaurant[]> => {
 
 // Create a new restaurant and add current user as admin
 export const createRestaurant = async (name: string): Promise<Restaurant> => {
+  console.log("Creating restaurant with name:", name);
   const { data, error } = await supabase
     .rpc('create_restaurant_with_admin', {
       restaurant_name: name,
@@ -51,6 +52,8 @@ export const createRestaurant = async (name: string): Promise<Restaurant> => {
     throw new Error(error.message);
   }
 
+  console.log("Restaurant created with ID:", data);
+  
   // Fetch the newly created restaurant
   const { data: restaurant, error: fetchError } = await supabase
     .from('restaurants')
