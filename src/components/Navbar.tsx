@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard } from "lucide-react";
+import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -110,6 +110,12 @@ export const Navbar: React.FC = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">
+                      <SettingsIcon className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => signOut()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
@@ -171,6 +177,12 @@ export const Navbar: React.FC = () => {
                           <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
+                      <Link to="/settings" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full justify-start">
+                          <SettingsIcon className="mr-2 h-5 w-5" />
+                          Settings
+                        </Button>
+                      </Link>
                       <Button 
                         variant="outline" 
                         className="w-full justify-start"

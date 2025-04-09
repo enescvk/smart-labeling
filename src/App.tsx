@@ -14,6 +14,7 @@ import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 import { useEffect } from "react";
 import { testSupabaseConnection } from "./lib/supabase";
 
@@ -60,6 +61,11 @@ const App = () => {
                 <Route path="/dashboard" element={
                   <PrivateRoute>
                     <Dashboard />
+                  </PrivateRoute>
+                } />
+                <Route path="/settings" element={
+                  <PrivateRoute>
+                    <Settings />
                   </PrivateRoute>
                 } />
                 <Route path="/auth" element={<Auth />} />

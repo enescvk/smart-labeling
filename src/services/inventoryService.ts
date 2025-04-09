@@ -1,3 +1,4 @@
+
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 
@@ -10,6 +11,26 @@ export interface InventoryItem {
   status: 'active' | 'used';
   containerType: string;
   createdAt: string;
+  restaurantId?: string;
+}
+
+export interface Restaurant {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RestaurantMember {
+  id: string;
+  userId: string;
+  restaurantId: string;
+  role: 'admin' | 'staff';
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    email: string;
+  };
 }
 
 // Transform from database format to app format
@@ -21,7 +42,8 @@ const transformDbItem = (item: any): InventoryItem => ({
   expiryDate: item.expiry_date,
   status: item.status,
   containerType: item.container_type || 'Container',
-  createdAt: item.created_at
+  createdAt: item.created_at,
+  restaurantId: item.restaurant_id
 });
 
 // Transform from app format to database format
@@ -33,6 +55,7 @@ const transformToDbItem = (item: Omit<InventoryItem, 'createdAt'>) => ({
   expiry_date: item.expiryDate,
   status: item.status,
   container_type: item.containerType,
+  restaurant_id: item.restaurantId,
   created_at: new Date().toISOString()
 });
 
@@ -231,5 +254,218 @@ export const getItemById = async (id: string): Promise<InventoryItem | null> => 
   } catch (err) {
     console.error('Exception in getItemById:', err);
     return null;
+  }
+};
+
+// Restaurant related functions
+export const createRestaurant = async (name: string): Promise<Restaurant | null> => {
+  console.log('Creating restaurant:', name);
+  try {
+    const { data, error } = await supabase
+      .rpc('create_restaurant_with_admin', { restaurant_name: name });
+
+    if (error) {
+      console.error('Error creating restaurant:', error);
+      throw error;
+    }
+
+    // Get the newly created restaurant details
+    const restaurantId = data;
+    const restaurantResponse = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('id', restaurantId)
+      .single();
+
+    if (restaurantResponse.error) {
+      console.error('Error fetching created restaurant:', restaurantResponse.error);
+      throw restaurantResponse.error;
+    }
+
+    console.log('Restaurant created successfully:', restaurantResponse.data);
+    return {
+      id: restaurantResponse.data.id,
+      name: restaurantResponse.data.name,
+      createdAt: restaurantResponse.data.created_at,
+      updatedAt: restaurantResponse.data.updated_at
+    };
+  } catch (err) {
+    console.error('Exception in createRestaurant:', err);
+    return null;
+  }
+};
+
+export const getUserRestaurants = async (): Promise<Restaurant[]> => {
+  console.log('Fetching user restaurants');
+  try {
+    const { data, error } = await supabase
+      .from('restaurants')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching restaurants:', error);
+      throw error;
+    }
+
+    console.log('Retrieved restaurants:', data);
+    return data ? data.map(restaurant => ({
+      id: restaurant.id,
+      name: restaurant.name,
+      createdAt: restaurant.created_at,
+      updatedAt: restaurant.updated_at
+    })) : [];
+  } catch (err) {
+    console.error('Exception in getUserRestaurants:', err);
+    return [];
+  }
+};
+
+export const updateRestaurant = async (id: string, name: string): Promise<Restaurant | null> => {
+  console.log(`Updating restaurant ${id} name to ${name}`);
+  try {
+    const { data, error } = await supabase
+      .from('restaurants')
+      .update({ name, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating restaurant:', error);
+      throw error;
+    }
+
+    console.log('Restaurant updated successfully:', data);
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
+  } catch (err) {
+    console.error('Exception in updateRestaurant:', err);
+    return null;
+  }
+};
+
+export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
+  console.log(`Fetching members for restaurant ${restaurantId}`);
+  try {
+    const { data, error } = await supabase
+      .from('restaurant_members')
+      .select('*, user:user_id(email)')
+      .eq('restaurant_id', restaurantId);
+
+    if (error) {
+      console.error('Error fetching restaurant members:', error);
+      throw error;
+    }
+
+    console.log('Retrieved restaurant members:', data);
+    return data ? data.map(member => ({
+      id: member.id,
+      userId: member.user_id,
+      restaurantId: member.restaurant_id,
+      role: member.role,
+      createdAt: member.created_at,
+      updatedAt: member.updated_at,
+      user: member.user ? { email: member.user.email } : undefined
+    })) : [];
+  } catch (err) {
+    console.error('Exception in getRestaurantMembers:', err);
+    return [];
+  }
+};
+
+export const addRestaurantMember = async (restaurantId: string, email: string, role: 'admin' | 'staff'): Promise<RestaurantMember | null> => {
+  console.log(`Adding member with email ${email} to restaurant ${restaurantId} with role ${role}`);
+  try {
+    // First get the user ID from the email
+    const { data: userData, error: userError } = await supabase
+      .from('auth.users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (userError) {
+      console.error('Error finding user by email:', userError);
+      throw userError;
+    }
+
+    if (!userData) {
+      console.error('No user found with email:', email);
+      throw new Error(`No user found with email: ${email}`);
+    }
+
+    // Add the user as a member
+    const { data, error } = await supabase
+      .from('restaurant_members')
+      .insert({
+        restaurant_id: restaurantId,
+        user_id: userData.id,
+        role
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding restaurant member:', error);
+      throw error;
+    }
+
+    console.log('Restaurant member added successfully:', data);
+    return {
+      id: data.id,
+      userId: data.user_id,
+      restaurantId: data.restaurant_id,
+      role: data.role,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      user: { email }
+    };
+  } catch (err) {
+    console.error('Exception in addRestaurantMember:', err);
+    return null;
+  }
+};
+
+export const removeRestaurantMember = async (memberId: string): Promise<boolean> => {
+  console.log(`Removing restaurant member ${memberId}`);
+  try {
+    const { error } = await supabase
+      .from('restaurant_members')
+      .delete()
+      .eq('id', memberId);
+
+    if (error) {
+      console.error('Error removing restaurant member:', error);
+      throw error;
+    }
+
+    console.log('Restaurant member removed successfully');
+    return true;
+  } catch (err) {
+    console.error('Exception in removeRestaurantMember:', err);
+    return false;
+  }
+};
+
+export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
+  console.log(`Checking if user is admin for restaurant ${restaurantId}`);
+  try {
+    const { data, error } = await supabase
+      .rpc('is_restaurant_admin', { restaurant_id: restaurantId });
+
+    if (error) {
+      console.error('Error checking restaurant admin status:', error);
+      throw error;
+    }
+
+    console.log('Restaurant admin check result:', data);
+    return !!data;
+  } catch (err) {
+    console.error('Exception in isRestaurantAdmin:', err);
+    return false;
   }
 };
