@@ -42,29 +42,33 @@ const App = () => {
           <BrowserRouter>
             <AnimatePresence mode="wait">
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={
+                  <PrivateRoute requiresRestaurant={false}>
+                    <Index />
+                  </PrivateRoute>
+                } />
                 <Route path="/create" element={
-                  <PrivateRoute>
+                  <PrivateRoute requiresRestaurant={true}>
                     <CreateLabel />
                   </PrivateRoute>
                 } />
                 <Route path="/scan" element={
-                  <PrivateRoute>
+                  <PrivateRoute requiresRestaurant={true}>
                     <ScanBarcode />
                   </PrivateRoute>
                 } />
                 <Route path="/history" element={
-                  <PrivateRoute>
+                  <PrivateRoute requiresRestaurant={false}>
                     <History />
                   </PrivateRoute>
                 } />
                 <Route path="/dashboard" element={
-                  <PrivateRoute>
+                  <PrivateRoute requiresRestaurant={true}>
                     <Dashboard />
                   </PrivateRoute>
                 } />
                 <Route path="/settings" element={
-                  <PrivateRoute>
+                  <PrivateRoute requiresRestaurant={false}>
                     <Settings />
                   </PrivateRoute>
                 } />

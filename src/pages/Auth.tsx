@@ -22,6 +22,8 @@ import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { Spinner } from "@/components/ui/spinner";
+import { getCurrentRestaurantName } from "@/services/restaurantService";
+import { useQuery } from "@tanstack/react-query";
 
 // Define the validation schema for login
 const loginSchema = z.object({
@@ -45,6 +47,13 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 const Auth: React.FC = () => {
   const [activeTab, setActiveTab] = useState("login");
   const { signIn, signUp, signInWithGoogle, user, isLoading } = useAuth();
+  
+  // Get the current restaurant name if any
+  const { data: restaurantName } = useQuery({
+    queryKey: ['currentRestaurantName'],
+    queryFn: getCurrentRestaurantName,
+    enabled: false, // Don't fetch automatically, we'll do it manually after login
+  });
   
   // Initialize forms outside of any conditional returns
   const loginForm = useForm<LoginFormValues>({
@@ -257,6 +266,12 @@ const Auth: React.FC = () => {
                     <FcGoogle className="mr-2 h-4 w-4" />
                     Google
                   </Button>
+
+                  {restaurantName && (
+                    <p className="text-xs text-center mt-4 text-muted-foreground">
+                      You'll be connected to: {restaurantName}
+                    </p>
+                  )}
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <p className="text-xs text-muted-foreground">
