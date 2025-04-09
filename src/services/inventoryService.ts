@@ -1,6 +1,6 @@
 
-import { supabase } from "@/lib/supabase";
-import { getUserRestaurants } from "./restaurantService";
+import { supabase } from "@/integrations/supabase/client";
+import { getCurrentRestaurantId } from "./restaurantService";
 
 export interface InventoryItem {
   id: string;
@@ -27,12 +27,6 @@ const mapDatabaseItem = (item: any): InventoryItem => {
     createdAt: item.created_at,
     restaurantId: item.restaurant_id,
   };
-};
-
-// Get the current restaurant ID (first one in the list)
-export const getCurrentRestaurantId = async (): Promise<string | null> => {
-  const restaurants = await getUserRestaurants();
-  return restaurants.length > 0 ? restaurants[0].id : null;
 };
 
 // Get all inventory items

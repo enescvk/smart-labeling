@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -12,7 +11,7 @@ import {
   removeRestaurantMember,
   RestaurantMember,
   isRestaurantAdmin
-} from "@/services/inventoryService";
+} from "@/services/restaurantService";
 import { 
   Card, 
   CardContent, 
@@ -59,7 +58,6 @@ const Settings = () => {
   const [newMemberRole, setNewMemberRole] = useState<"admin" | "staff">("staff");
   const queryClient = useQueryClient();
 
-  // Fetch user's restaurants
   const { 
     data: restaurants = [], 
     isLoading: isLoadingRestaurants,
@@ -69,14 +67,12 @@ const Settings = () => {
     queryFn: getUserRestaurants
   });
 
-  // Set the first restaurant as selected when data loads
   useEffect(() => {
     if (restaurants.length > 0 && !selectedRestaurantId) {
       setSelectedRestaurantId(restaurants[0].id);
     }
   }, [restaurants, selectedRestaurantId]);
 
-  // Fetch restaurant members for the selected restaurant
   const {
     data: members = [],
     isLoading: isLoadingMembers,
@@ -87,7 +83,6 @@ const Settings = () => {
     enabled: !!selectedRestaurantId
   });
 
-  // Check if current user is admin for selected restaurant
   const {
     data: isAdmin = false,
     isLoading: isLoadingAdminStatus
@@ -97,7 +92,6 @@ const Settings = () => {
     enabled: !!selectedRestaurantId
   });
 
-  // Create restaurant mutation
   const createRestaurantMutation = useMutation({
     mutationFn: (name: string) => createRestaurant(name),
     onSuccess: () => {
@@ -119,7 +113,6 @@ const Settings = () => {
     }
   });
 
-  // Update restaurant mutation
   const updateRestaurantMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string; }) => 
       updateRestaurant(id, name),
@@ -143,7 +136,6 @@ const Settings = () => {
     }
   });
 
-  // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: ({ restaurantId, email, role }: { 
       restaurantId: string; 
@@ -170,7 +162,6 @@ const Settings = () => {
     }
   });
 
-  // Remove member mutation
   const removeMemberMutation = useMutation({
     mutationFn: (memberId: string) => removeRestaurantMember(memberId),
     onSuccess: () => {

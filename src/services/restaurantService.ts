@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -66,13 +65,41 @@ export const createRestaurant = async (name: string): Promise<Restaurant> => {
   return restaurant;
 };
 
+// Update restaurant name
+export const updateRestaurant = async (id: string, name: string): Promise<void> => {
+  const { error } = await supabase
+    .from('restaurants')
+    .update({ name })
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error updating restaurant:", error);
+    throw new Error(error.message);
+  }
+};
+
+// Check if the current user is an admin of a restaurant
+export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .rpc('is_restaurant_admin', {
+      restaurant_id: restaurantId,
+    });
+
+  if (error) {
+    console.error("Error checking admin status:", error);
+    return false;
+  }
+
+  return !!data;
+};
+
 // Get all members of a restaurant
 export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
   const { data, error } = await supabase
     .from('restaurant_members')
     .select(`
       *,
-      user:user_id(email)
+      user:profiles!user_id(email)
     `)
     .eq('restaurant_id', restaurantId);
 
@@ -81,14 +108,14 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
     throw new Error(error.message);
   }
 
-  return data || [];
+  return (data || []) as RestaurantMember[];
 };
 
 // Add a user to a restaurant
 export const addRestaurantMember = async (restaurantId: string, email: string, role: 'admin' | 'staff'): Promise<void> => {
   // First find the user by email
   const { data: users, error: userError } = await supabase
-    .from('users')
+    .from('profiles')
     .select('id')
     .eq('email', email);
 
@@ -133,4 +160,10 @@ export const removeRestaurantMember = async (memberId: string): Promise<void> =>
 export const getCurrentRestaurantName = async (): Promise<string | null> => {
   const restaurants = await getUserRestaurants();
   return restaurants.length > 0 ? restaurants[0].name : null;
+};
+
+// Get the current restaurant ID (first one in the list)
+export const getCurrentRestaurantId = async (): Promise<string | null> => {
+  const restaurants = await getUserRestaurants();
+  return restaurants.length > 0 ? restaurants[0].id : null;
 };
