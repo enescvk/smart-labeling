@@ -138,9 +138,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_is_restaurant_admin: {
+        Args: { restaurant_id: string; user_id?: string }
+        Returns: boolean
+      }
       create_restaurant_with_admin: {
         Args: { restaurant_name: string }
         Returns: string
+      }
+      get_user_restaurant_ids: {
+        Args: { user_id?: string }
+        Returns: string[]
       }
       is_restaurant_admin: {
         Args: { restaurant_id: string; user_id?: string }
