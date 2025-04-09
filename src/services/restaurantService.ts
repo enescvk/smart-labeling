@@ -82,7 +82,7 @@ export const updateRestaurant = async (id: string, name: string): Promise<void> 
 // Check if the current user is an admin of a restaurant
 export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
   const { data, error } = await supabase
-    .rpc('check_is_restaurant_admin', {
+    .rpc('is_restaurant_admin', {
       restaurant_id: restaurantId,
     });
 
