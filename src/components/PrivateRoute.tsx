@@ -31,15 +31,15 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
           if (restaurants.length === 0 && user.user_metadata?.restaurant_name) {
             try {
               console.log("Creating restaurant from metadata:", user.user_metadata.restaurant_name);
-              await createRestaurant(user.user_metadata.restaurant_name as string);
+              const newRestaurant = await createRestaurant(user.user_metadata.restaurant_name as string);
               toast.success("Restaurant created successfully", {
                 description: `${user.user_metadata.restaurant_name} has been set up for you.`
               });
               setHasRestaurant(true);
-            } catch (error) {
+            } catch (error: any) {
               console.error("Error creating restaurant:", error);
               toast.error("Failed to create restaurant", {
-                description: "Please try again or contact support."
+                description: error.message || "Please try again or contact support."
               });
             }
           } else {

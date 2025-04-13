@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,15 +22,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event);
-        // Use synchronous updates to prevent React conflicts
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Use a timeout to defer toast notifications to avoid React rendering conflicts
         if (event === 'SIGNED_IN') {
           setTimeout(() => {
             toast({
@@ -47,7 +43,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           }, 0);
         } else if (event === 'PASSWORD_RECOVERY') {
-          // This event is triggered when a user clicks on the password recovery link
           setTimeout(() => {
             toast({
               title: "Password recovery",
@@ -58,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Existing session:", currentSession);
       setSession(currentSession);
@@ -100,15 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, restaurantName?: string) => {
     try {
       setIsLoading(true);
-      // Store restaurant name in metadata for later use after email verification
-      console.log("Signing up with restaurant name:", restaurantName);
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
+          data: restaurantName ? {
             restaurant_name: restaurantName,
-          },
+          } : undefined,
         }
       });
 
@@ -217,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Create a stable context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({
     session,
     user,

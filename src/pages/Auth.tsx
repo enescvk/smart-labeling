@@ -106,11 +106,14 @@ const Auth: React.FC = () => {
   const onSignupSubmit = async (values: SignupFormValues) => {
     try {
       setIsCreatingRestaurant(true);
-      // First sign up the user
-      await signUp(values.email, values.password);
       
-      // After signing up, create the restaurant - this will now happen automatically
-      // on first login through the private route logic
+      // Sign up the user with restaurant name in metadata
+      await signUp(
+        values.email, 
+        values.password, 
+        values.restaurantName
+      );
+      
       toast({
         title: "Account created",
         description: "Please verify your email to continue.",
