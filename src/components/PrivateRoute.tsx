@@ -1,72 +1,90 @@
-
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
-import { Spinner } from "./ui/spinner";
-import { useQuery } from "@tanstack/react-query";
-import { getUserRestaurants } from "@/services/restaurantService";
-import { Button } from "./ui/button";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Navigate, useLocation } from "react-router-dom";
+import { getCurrentRestaurantId, createRestaurant, getUserRestaurants } from "@/services/restaurantService";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface PrivateRouteProps {
+  requiresRestaurant: boolean;
   children: React.ReactNode;
-  requiresRestaurant?: boolean;
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ 
-  children, 
-  requiresRestaurant = true // By default, require restaurant connection
+  requiresRestaurant,
+  children 
 }) => {
   const { user, isLoading } = useAuth();
+  const [isCheckingRestaurant, setIsCheckingRestaurant] = useState(true);
+  const [hasRestaurant, setHasRestaurant] = useState(false);
+  const location = useLocation();
 
-  // Fetch user's restaurants
-  const { 
-    data: restaurants = [], 
-    isLoading: isLoadingRestaurants 
-  } = useQuery({
-    queryKey: ['userRestaurants'],
-    queryFn: getUserRestaurants,
-    enabled: !!user, // Only run if user is authenticated
-  });
+  useEffect(() => {
+    const checkUserRestaurant = async () => {
+      try {
+        if (user) {
+          // Check if the user has any restaurants
+          const restaurants = await getUserRestaurants();
+          
+          // If no restaurants and userMetadata has restaurant_name, create one
+          if (restaurants.length === 0 && user.user_metadata?.restaurant_name) {
+            try {
+              await createRestaurant(user.user_metadata.restaurant_name as string);
+              toast.success("Restaurant created successfully", {
+                description: `${user.user_metadata.restaurant_name} has been set up for you.`
+              });
+              setHasRestaurant(true);
+            } catch (error) {
+              console.error("Error creating restaurant:", error);
+              toast.error("Failed to create restaurant", {
+                description: "Please try again or contact support."
+              });
+            }
+          } else {
+            setHasRestaurant(restaurants.length > 0);
+          }
+        }
+        setIsCheckingRestaurant(false);
+      } catch (error) {
+        console.error("Error checking restaurant:", error);
+        setIsCheckingRestaurant(false);
+      }
+    };
 
-  // If still checking auth state, show loading spinner
-  if (isLoading || (user && isLoadingRestaurants)) {
+    if (!isLoading && user) {
+      checkUserRestaurant();
+    } else if (!isLoading && !user) {
+      setIsCheckingRestaurant(false);
+    }
+  }, [user, isLoading]);
+
+  // Show loading spinner while checking auth or restaurant status
+  if (isLoading || (user && isCheckingRestaurant)) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="h-screen flex items-center justify-center">
         <Spinner size="lg" />
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">
+          {isLoading ? "Checking authentication..." : "Setting up your restaurant..."}
+        </span>
       </div>
     );
   }
 
-  // If user is not authenticated, redirect to login
+  // If no user, redirect to login
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" state={{ from: location }} />;
   }
 
-  // If route requires restaurant and user has no restaurants, show restaurant selection page
-  if (requiresRestaurant && restaurants.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-md"
-        >
-          <h1 className="text-2xl font-bold mb-4">Restaurant Required</h1>
-          <p className="mb-6 text-muted-foreground">
-            You need to be connected to a restaurant before you can access this feature.
-            Please go to settings to create or join a restaurant.
-          </p>
-          <Button asChild>
-            <Link to="/settings">Go to Settings</Link>
-          </Button>
-        </motion.div>
-      </div>
-    );
+  // If requires restaurant but user has none, redirect to create restaurant page
+  if (requiresRestaurant && !hasRestaurant) {
+    toast.info("Restaurant Required", {
+      description: "You need to create a restaurant first."
+    });
+    
+    return <Navigate to="/settings" />;
   }
 
-  // If user is authenticated and has restaurant (or it's not required), render the protected content
+  // Otherwise render children
   return <>{children}</>;
 };
 

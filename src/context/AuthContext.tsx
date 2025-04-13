@@ -9,7 +9,7 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, restaurantName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (newPassword: string) => Promise<void>;
@@ -96,12 +96,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, restaurantName?: string) => {
     try {
       setIsLoading(true);
+      // Store restaurant name in metadata for later use after email verification
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            restaurant_name: restaurantName,
+          },
+        }
       });
 
       if (error) {

@@ -44,7 +44,7 @@ const App = () => {
             <AnimatePresence mode="wait">
               <Routes>
                 <Route path="/" element={
-                  <PrivateRoute requiresRestaurant={false}>
+                  <PrivateRoute requiresRestaurant={true}>
                     <Index />
                   </PrivateRoute>
                 } />
@@ -59,7 +59,7 @@ const App = () => {
                   </PrivateRoute>
                 } />
                 <Route path="/history" element={
-                  <PrivateRoute requiresRestaurant={false}>
+                  <PrivateRoute requiresRestaurant={true}>
                     <History />
                   </PrivateRoute>
                 } />

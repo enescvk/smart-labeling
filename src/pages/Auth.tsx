@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { Spinner } from "@/components/ui/spinner";
-import { getCurrentRestaurantName } from "@/services/restaurantService";
+import { createRestaurant, getCurrentRestaurantName } from "@/services/restaurantService";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -32,11 +33,12 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
-// Define the validation schema for signup
+// Define the validation schema for signup - now with restaurant name
 const signupSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  restaurantName: z.string().min(1, { message: "Restaurant name is required" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -55,6 +57,8 @@ const Auth: React.FC = () => {
   const [activeTab, setActiveTab] = useState("login");
   const { signIn, signUp, signInWithGoogle, user, isLoading } = useAuth();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
+  const navigate = useNavigate();
   
   // Get the current restaurant name if any
   const { data: restaurantName } = useQuery({
@@ -78,6 +82,7 @@ const Auth: React.FC = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      restaurantName: "",
     },
   });
   
@@ -100,10 +105,22 @@ const Auth: React.FC = () => {
   // Handle signup form submission
   const onSignupSubmit = async (values: SignupFormValues) => {
     try {
+      setIsCreatingRestaurant(true);
+      // First sign up the user
       await signUp(values.email, values.password);
+      
+      // After signing up, create the restaurant - this will now happen automatically
+      // on first login through the private route logic
+      toast({
+        title: "Account created",
+        description: "Please verify your email to continue.",
+      });
+      
       setActiveTab("login");
     } catch (error) {
       console.error("Signup error:", error);
+    } finally {
+      setIsCreatingRestaurant(false);
     }
   };
   
@@ -113,7 +130,7 @@ const Auth: React.FC = () => {
       setIsResettingPassword(true);
       
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) {
@@ -243,7 +260,7 @@ const Auth: React.FC = () => {
                 <CardHeader>
                   <CardTitle>Create an account</CardTitle>
                   <CardDescription>
-                    Enter your email below to create your account
+                    Enter your details to create your account and restaurant
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -288,8 +305,28 @@ const Auth: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Creating account..." : "Create account"}
+                      <FormField
+                        control={signupForm.control}
+                        name="restaurantName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Restaurant Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Your Restaurant Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" className="w-full" disabled={isCreatingRestaurant}>
+                        {isCreatingRestaurant ? (
+                          <>
+                            <Spinner className="mr-2" size="sm" />
+                            Creating Account...
+                          </>
+                        ) : (
+                          "Create account"
+                        )}
                       </Button>
                     </form>
                   </Form>
@@ -314,12 +351,6 @@ const Auth: React.FC = () => {
                     <FcGoogle className="mr-2 h-4 w-4" />
                     Google
                   </Button>
-
-                  {restaurantName && (
-                    <p className="text-xs text-center mt-4 text-muted-foreground">
-                      You'll be connected to: {restaurantName}
-                    </p>
-                  )}
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <p className="text-xs text-muted-foreground">
