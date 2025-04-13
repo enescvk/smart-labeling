@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
@@ -29,6 +30,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
           // If no restaurants and userMetadata has restaurant_name, create one
           if (restaurants.length === 0 && user.user_metadata?.restaurant_name) {
             try {
+              console.log("Creating restaurant from metadata:", user.user_metadata.restaurant_name);
               await createRestaurant(user.user_metadata.restaurant_name as string);
               toast.success("Restaurant created successfully", {
                 description: `${user.user_metadata.restaurant_name} has been set up for you.`

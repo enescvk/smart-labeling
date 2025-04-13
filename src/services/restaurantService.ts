@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -22,6 +23,7 @@ export type RestaurantMember = {
 // Get restaurants that the current user is a member of
 export const getUserRestaurants = async (): Promise<Restaurant[]> => {
   try {
+    console.log("Fetching user restaurants");
     // First get the restaurant IDs that the user has access to
     const { data: restaurantIds, error: idsError } = await supabase
       .rpc('get_user_restaurant_ids');
@@ -31,6 +33,7 @@ export const getUserRestaurants = async (): Promise<Restaurant[]> => {
       throw new Error(idsError.message);
     }
 
+    console.log("Restaurant IDs:", restaurantIds);
     if (!restaurantIds || restaurantIds.length === 0) {
       return [];
     }
@@ -47,6 +50,7 @@ export const getUserRestaurants = async (): Promise<Restaurant[]> => {
       throw new Error(error.message);
     }
 
+    console.log("Fetched restaurants:", restaurants);
     return restaurants || [];
   } catch (error) {
     console.error("Error in getUserRestaurants:", error);
