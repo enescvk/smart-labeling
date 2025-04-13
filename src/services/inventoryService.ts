@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrentRestaurantId } from "./restaurantService";
+import { getCurrentRestaurantId } from "./restaurant";
 
 export interface InventoryItem {
   id: string;
