@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -138,9 +139,14 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
 // Get all members of a restaurant
 export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
   try {
-    // First get current user's email
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No authenticated user found");
+    // First get current user's email and ID
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("No authenticated user found:", userError);
+      throw new Error("No authenticated user found");
+    }
+    
+    console.log("Current user:", user.id, user.email);
     
     // Then get profiles with emails
     const { data: profiles, error: profilesError } = await supabase
@@ -151,6 +157,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       console.error("Error fetching profiles:", profilesError);
       throw new Error(profilesError.message);
     }
+    
+    console.log("Fetched profiles:", profiles);
     
     // Now get restaurant members
     const { data: members, error } = await supabase
@@ -163,6 +171,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       throw new Error(error.message);
     }
 
+    console.log("Fetched members:", members);
+
     // Merge the profile emails with the members
     const membersWithEmails = (members || []).map(member => {
       const profile = profiles?.find(p => p.id === member.user_id);
@@ -173,6 +183,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         }
       };
     }) as RestaurantMember[];
+    
+    console.log("Members with emails:", membersWithEmails);
     
     return membersWithEmails;
   } catch (error) {

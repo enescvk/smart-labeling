@@ -146,9 +146,17 @@ export type Database = {
         Args: { restaurant_name: string }
         Returns: string
       }
+      get_member_restaurants: {
+        Args: { p_user_id?: string }
+        Returns: string[]
+      }
       get_user_restaurant_ids: {
         Args: { user_id?: string }
         Returns: string[]
+      }
+      is_admin_of_restaurant: {
+        Args: { p_restaurant_id: string }
+        Returns: boolean
       }
       is_member_of_restaurant: {
         Args: { restaurant_id: string; user_id?: string }
