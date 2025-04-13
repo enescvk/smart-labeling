@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -23,11 +22,24 @@ export type RestaurantMember = {
 // Get restaurants that the current user is a member of
 export const getUserRestaurants = async (): Promise<Restaurant[]> => {
   try {
-    // Use a direct query against restaurants, joining with the get_user_restaurant_ids function
+    // First get the restaurant IDs that the user has access to
+    const { data: restaurantIds, error: idsError } = await supabase
+      .rpc('get_user_restaurant_ids');
+    
+    if (idsError) {
+      console.error("Error fetching user restaurant IDs:", idsError);
+      throw new Error(idsError.message);
+    }
+
+    if (!restaurantIds || restaurantIds.length === 0) {
+      return [];
+    }
+    
+    // Now fetch the actual restaurants using those IDs
     const { data: restaurants, error } = await supabase
       .from('restaurants')
       .select('*')
-      .in('id', supabase.rpc('get_user_restaurant_ids'))
+      .in('id', restaurantIds)
       .order('created_at', { ascending: false });
 
     if (error) {
