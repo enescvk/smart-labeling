@@ -11,7 +11,7 @@ import {
   removeRestaurantMember,
   RestaurantMember,
   isRestaurantAdmin
-} from "@/services/restaurantService";
+} from "@/services/restaurant";
 import { 
   Card, 
   CardContent, 
