@@ -138,7 +138,11 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
 // Get all members of a restaurant
 export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
   try {
-    // First get profiles with emails
+    // First get current user's email
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("No authenticated user found");
+    
+    // Then get profiles with emails
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, email:username');
@@ -165,7 +169,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       return {
         ...member,
         user: { 
-          email: profile?.email || 'Unknown Email' 
+          email: profile?.email || (member.user_id === user.id ? user.email : 'Unknown Email')
         }
       };
     }) as RestaurantMember[];
