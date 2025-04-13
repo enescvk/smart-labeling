@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import PasswordReset from "./pages/PasswordReset";
 import { useEffect } from "react";
 import { testSupabaseConnection } from "./lib/supabase";
 
@@ -73,6 +74,7 @@ const App = () => {
                   </PrivateRoute>
                 } />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AnimatePresence>

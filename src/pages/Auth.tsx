@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { z } from "zod";
@@ -24,6 +23,8 @@ import { motion } from "framer-motion";
 import { Spinner } from "@/components/ui/spinner";
 import { getCurrentRestaurantName } from "@/services/restaurantService";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 // Define the validation schema for login
 const loginSchema = z.object({
@@ -41,12 +42,19 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Define the validation schema for forgot password
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 const Auth: React.FC = () => {
   const [activeTab, setActiveTab] = useState("login");
   const { signIn, signUp, signInWithGoogle, user, isLoading } = useAuth();
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   
   // Get the current restaurant name if any
   const { data: restaurantName } = useQuery({
@@ -72,6 +80,13 @@ const Auth: React.FC = () => {
       confirmPassword: "",
     },
   });
+  
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
 
   // Handle login form submission
   const onLoginSubmit = async (values: LoginFormValues) => {
@@ -89,6 +104,38 @@ const Auth: React.FC = () => {
       setActiveTab("login");
     } catch (error) {
       console.error("Signup error:", error);
+    }
+  };
+  
+  // Handle forgot password form submission
+  const onForgotPasswordSubmit = async (values: ForgotPasswordFormValues) => {
+    try {
+      setIsResettingPassword(true);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for a link to reset your password",
+      });
+      
+      // Return to login tab after successful submission
+      setActiveTab("login");
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset password email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -118,9 +165,10 @@ const Auth: React.FC = () => {
           transition={{ duration: 0.5 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="forgot">Forgot Password</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -285,6 +333,58 @@ const Auth: React.FC = () => {
                     </a>
                     .
                   </p>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="forgot">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Forgot Password</CardTitle>
+                  <CardDescription>
+                    Enter your email and we'll send you a link to reset your password
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...forgotPasswordForm}>
+                    <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                      <FormField
+                        control={forgotPasswordForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input placeholder="email@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={isResettingPassword}
+                      >
+                        {isResettingPassword ? 
+                          <>
+                            <Spinner className="mr-2" size="sm" /> 
+                            Sending Email...
+                          </> : 
+                          "Send Reset Link"
+                        }
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    variant="link" 
+                    className="w-full" 
+                    onClick={() => setActiveTab("login")}
+                  >
+                    Back to Login
+                  </Button>
                 </CardFooter>
               </Card>
             </TabsContent>

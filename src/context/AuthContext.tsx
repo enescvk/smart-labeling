@@ -12,6 +12,7 @@ type AuthContextType = {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             toast({
               title: "Signed out",
               description: "You have been signed out successfully",
+            });
+          }, 0);
+        } else if (event === 'PASSWORD_RECOVERY') {
+          // This event is triggered when a user clicks on the password recovery link
+          setTimeout(() => {
+            toast({
+              title: "Password recovery",
+              description: "Please enter a new password",
             });
           }, 0);
         }
@@ -169,6 +178,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
+  
+  const resetPassword = async (newPassword: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      
+      if (error) {
+        setTimeout(() => {
+          toast({
+            title: "Error resetting password",
+            description: error.message,
+            variant: "destructive",
+          });
+        }, 0);
+        throw error;
+      } else {
+        setTimeout(() => {
+          toast({
+            title: "Password updated successfully",
+            description: "Your password has been reset.",
+          });
+        }, 0);
+      }
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Create a stable context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({
@@ -179,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     signInWithGoogle,
+    resetPassword
   }), [session, user, isLoading]);
 
   return (
