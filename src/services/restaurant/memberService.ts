@@ -65,7 +65,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
 
     // Process the members data to handle potential relation errors
     const processedMembers: RestaurantMember[] = members.map(member => {
-      // Check if user property has an error (relation not found)
+      // Check if user property exists and has an error field 
+      // TypeScript fix: First check if user exists, then check if it has an 'error' property
       if (member.user && typeof member.user === 'object' && 'error' in member.user) {
         // Return a well-formed RestaurantMember with default user email
         return {
@@ -80,8 +81,34 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           }
         };
       }
-      // Return the member as is if user property is well-formed
-      return member as RestaurantMember;
+      
+      // Handle case where user might be null
+      if (!member.user) {
+        return {
+          id: member.id,
+          user_id: member.user_id,
+          restaurant_id: member.restaurant_id,
+          role: member.role as 'admin' | 'staff',
+          created_at: member.created_at,
+          updated_at: member.updated_at,
+          user: {
+            email: 'Unknown Email'
+          }
+        };
+      }
+      
+      // Use type assertion after we've checked all cases
+      return {
+        id: member.id,
+        user_id: member.user_id,
+        restaurant_id: member.restaurant_id,
+        role: member.role as 'admin' | 'staff',
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+        user: {
+          email: member.user.email
+        }
+      };
     });
     
     return processedMembers;
