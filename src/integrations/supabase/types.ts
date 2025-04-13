@@ -150,6 +150,10 @@ export type Database = {
         Args: { user_id?: string }
         Returns: string[]
       }
+      is_member_of_restaurant: {
+        Args: { restaurant_id: string; user_id?: string }
+        Returns: boolean
+      }
       is_restaurant_admin: {
         Args: { restaurant_id: string; user_id?: string }
         Returns: boolean

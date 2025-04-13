@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -24,6 +23,15 @@ export type RestaurantMember = {
 export const getUserRestaurants = async (): Promise<Restaurant[]> => {
   try {
     console.log("Fetching user restaurants");
+    
+    // Get current user to confirm we have an authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("No authenticated user found:", userError);
+      return [];
+    }
+    console.log("Current user:", user.id);
+    
     // First get the restaurant IDs that the user has access to
     const { data: restaurantIds, error: idsError } = await supabase
       .rpc('get_user_restaurant_ids');
@@ -46,7 +54,7 @@ export const getUserRestaurants = async (): Promise<Restaurant[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("Error fetching user restaurants:", error);
+      console.error("Error fetching restaurants:", error);
       throw new Error(error.message);
     }
 
