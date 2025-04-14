@@ -267,3 +267,84 @@ export const getCurrentRestaurantId = async (): Promise<string | null> => {
     return null;
   }
 };
+
+// Add a new function to create and send restaurant invitation
+export const sendRestaurantInvitation = async (
+  restaurantId: string, 
+  email: string, 
+  role: 'admin' | 'staff'
+): Promise<void> => {
+  try {
+    // First, check if the user is an admin of the restaurant
+    const { data: isAdmin, error: adminCheckError } = await supabase
+      .rpc('is_restaurant_admin', {
+        restaurant_id: restaurantId,
+      });
+
+    if (adminCheckError || !isAdmin) {
+      throw new Error("Only restaurant admins can send invitations");
+    }
+
+    // Create an invitation record
+    const { data: invitationData, error: insertError } = await supabase
+      .from('restaurant_invitations')
+      .insert({
+        restaurant_id: restaurantId,
+        email,
+        role,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select('invitation_token')
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    // Call the edge function to send the invitation email
+    const response = await supabase.functions.invoke('send-restaurant-invitation', {
+      body: JSON.stringify({
+        restaurantId,
+        email,
+        role,
+        invitationToken: invitationData.invitation_token
+      })
+    });
+
+    if (response.error) {
+      throw response.error;
+    }
+
+    console.log('Invitation sent successfully');
+  } catch (error) {
+    console.error("Error sending restaurant invitation:", error);
+    throw error;
+  }
+};
+
+// Add a function to accept an invitation
+export const acceptRestaurantInvitation = async (
+  invitationToken: string, 
+  password: string
+): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('process_invitation', {
+        invitation_token: invitationToken,
+        password
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data === null) {
+      throw new Error("Invalid or expired invitation");
+    }
+
+    console.log('Invitation accepted successfully');
+  } catch (error) {
+    console.error("Error accepting invitation:", error);
+    throw error;
+  }
+};

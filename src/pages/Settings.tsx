@@ -10,7 +10,8 @@ import {
   addRestaurantMember,
   removeRestaurantMember,
   RestaurantMember,
-  isRestaurantAdmin
+  isRestaurantAdmin,
+  sendRestaurantInvitation
 } from "@/services/restaurantService";
 import { 
   Card, 
@@ -228,11 +229,27 @@ const Settings = () => {
       return;
     }
 
-    addMemberMutation.mutate({ 
-      restaurantId: selectedRestaurantId,
-      email: newMemberEmail,
-      role: newMemberRole
-    });
+    try {
+      await sendRestaurantInvitation(
+        selectedRestaurantId, 
+        newMemberEmail, 
+        newMemberRole
+      );
+
+      toast({
+        title: "Invitation Sent",
+        description: `Invitation sent to ${newMemberEmail}`,
+      });
+
+      setNewMemberEmail("");
+      setNewMemberRole("staff");
+    } catch (error: any) {
+      toast({
+        title: "Error Sending Invitation",
+        description: error.message || "Failed to send invitation",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRemoveMember = async (memberId: string) => {

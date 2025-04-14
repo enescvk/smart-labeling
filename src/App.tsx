@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +15,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import PasswordReset from "./pages/PasswordReset";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import { useEffect } from "react";
 import { testSupabaseConnection } from "./lib/supabase";
 
@@ -75,6 +75,7 @@ const App = () => {
                 } />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<PasswordReset />} />
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AnimatePresence>
