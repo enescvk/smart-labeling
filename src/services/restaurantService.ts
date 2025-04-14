@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -322,11 +321,12 @@ export const sendRestaurantInvitation = async (
       })
     });
 
+    // In test mode, we might get a successful response even though the email wasn't sent to the target recipient
     if (response.error) {
       throw response.error;
     }
 
-    console.log('Invitation sent successfully');
+    console.log('Invitation processed successfully');
   } catch (error) {
     console.error("Error sending restaurant invitation:", error);
     throw error;
