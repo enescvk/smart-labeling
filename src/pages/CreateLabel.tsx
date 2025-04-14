@@ -30,8 +30,11 @@ const CreateLabel: React.FC = () => {
   });
   
   const handleSubmit = (data: LabelFormData & { barcodeId: string }) => {
+    console.log("Saving label to inventory:", data);
+    
     addLabelMutation.mutate(data, {
       onSuccess: () => {
+        console.log("Label successfully added to inventory");
         toast.success("Label added to inventory", {
           description: `${data.product} has been added to inventory.`,
           action: {

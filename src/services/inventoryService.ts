@@ -142,6 +142,8 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
       throw new Error("No restaurant selected");
     }
 
+    console.log("Adding item to inventory with restaurant ID:", restaurantId);
+
     const { data, error } = await supabase.from("inventory").insert({
       id: item.id,
       product: item.product,
@@ -154,7 +156,7 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
     }).select();
 
     if (error) {
-      console.error("Error adding inventory item:", error);
+      console.error("Supabase error adding inventory item:", error);
       throw new Error(error.message || "Failed to add inventory item");
     }
 
@@ -162,6 +164,7 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
       throw new Error("No data returned after adding inventory item");
     }
 
+    console.log("Successfully added inventory item:", data[0]);
     return mapDatabaseItem(data[0]);
   } catch (error) {
     console.error("Exception in addInventoryItem:", error);
