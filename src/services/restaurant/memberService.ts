@@ -105,7 +105,9 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         updated_at: member.updated_at,
         user: {
           // Safely extract email from user object, with fallback
-          email: (member.user && typeof member.user === 'object' && 'email' in member.user && member.user.email !== null) 
+          email: (member.user && typeof member.user === 'object' && 
+                 'email' in member.user && 
+                 member.user.email !== null) 
             ? String(member.user.email) 
             : 'Unknown Email'
         }
