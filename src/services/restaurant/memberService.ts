@@ -62,29 +62,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       // If no members returned, check if current user is admin
       return await getFallbackCurrentUserMember(restaurantId, user.id, user.email);
     }
-
-    // Process the members data to handle potential relation errors
-    const processedMembers: RestaurantMember[] = members.map(member => {
-      // Check if user property has an error (relation not found)
-      if (member.user && typeof member.user === 'object' && 'error' in member.user) {
-        // Return a well-formed RestaurantMember with default user email
-        return {
-          id: member.id,
-          user_id: member.user_id,
-          restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff',
-          created_at: member.created_at,
-          updated_at: member.updated_at,
-          user: {
-            email: 'Unknown Email'
-          }
-        };
-      }
-      // Return the member as is if user property is well-formed
-      return member as RestaurantMember;
-    });
     
-    return processedMembers;
+    return members as RestaurantMember[];
   } catch (error) {
     console.error("Error in getRestaurantMembers:", error);
     throw error;
