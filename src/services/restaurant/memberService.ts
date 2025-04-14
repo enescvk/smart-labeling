@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { RestaurantMember, RestaurantInvitation } from "./types";
+import type { RestaurantMember } from "./types";
 
 // Check if the current user is an admin of a restaurant
 export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
@@ -65,13 +65,14 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
 
     // Process the members data to handle potential relation errors
     const processedMembers: RestaurantMember[] = members.map(member => {
-      // Handle case where user might be null
-      if (!member.user) {
+      // Check if user property has an error (relation not found)
+      if (member.user && typeof member.user === 'object' && 'error' in member.user) {
+        // Return a well-formed RestaurantMember with default user email
         return {
           id: member.id,
           user_id: member.user_id,
           restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff' | 'viewer',
+          role: member.role as 'admin' | 'staff',
           created_at: member.created_at,
           updated_at: member.updated_at,
           user: {
@@ -79,39 +80,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           }
         };
       }
-      
-      // Check if user property exists and has an error field
-      if (typeof member.user === 'object' && 'error' in member.user) {
-        return {
-          id: member.id,
-          user_id: member.user_id,
-          restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff' | 'viewer',
-          created_at: member.created_at,
-          updated_at: member.updated_at,
-          user: {
-            email: 'Unknown Email'
-          }
-        };
-      }
-      
-      // Use type assertion after we've checked all cases
-      return {
-        id: member.id,
-        user_id: member.user_id,
-        restaurant_id: member.restaurant_id,
-        role: member.role as 'admin' | 'staff' | 'viewer',
-        created_at: member.created_at,
-        updated_at: member.updated_at,
-        user: {
-          // Safely extract email from user object, with fallback
-          email: (member.user && typeof member.user === 'object' && 
-                 'email' in member.user && 
-                 member.user.email !== null) 
-            ? String(member.user.email) 
-            : 'Unknown Email'
-        }
-      };
+      // Return the member as is if user property is well-formed
+      return member as RestaurantMember;
     });
     
     return processedMembers;
@@ -160,7 +130,7 @@ const getFallbackCurrentUserMember = async (
 };
 
 // Add a user to a restaurant
-export const addRestaurantMember = async (restaurantId: string, email: string, role: 'admin' | 'staff' | 'viewer'): Promise<void> => {
+export const addRestaurantMember = async (restaurantId: string, email: string, role: 'admin' | 'staff'): Promise<void> => {
   try {
     // First find the user by email
     const { data: users, error: userError } = await supabase
@@ -210,83 +180,6 @@ export const removeRestaurantMember = async (memberId: string): Promise<void> =>
     }
   } catch (error) {
     console.error("Error in removeRestaurantMember:", error);
-    throw error;
-  }
-};
-
-// Get pending invitations for a restaurant
-export const getRestaurantInvitations = async (restaurantId: string): Promise<RestaurantInvitation[]> => {
-  try {
-    const { data: invitations, error } = await supabase
-      .from('restaurant_invitations')
-      .select('*')
-      .eq('restaurant_id', restaurantId)
-      .is('accepted_at', null)
-      .gt('expires_at', new Date().toISOString());
-
-    if (error) {
-      console.error("Error fetching restaurant invitations:", error);
-      throw new Error(error.message);
-    }
-
-    // Cast the role field to ensure type safety
-    return (invitations || []).map(invitation => ({
-      ...invitation,
-      role: invitation.role as 'admin' | 'staff' | 'viewer'
-    }));
-  } catch (error) {
-    console.error("Error in getRestaurantInvitations:", error);
-    throw error;
-  }
-};
-
-// Send invitation to join a restaurant
-export const sendRestaurantInvitation = async (
-  restaurantId: string, 
-  email: string, 
-  role: 'admin' | 'staff' | 'viewer',
-  restaurantName: string
-): Promise<void> => {
-  try {
-    // Get current user for the inviter name
-    const { data: { user } } = await supabase.auth.getUser();
-    const inviterName = user?.email?.split('@')[0] || "Restaurant Admin";
-
-    // Call the edge function to send invitation
-    const { error } = await supabase.functions.invoke("send-invitation", {
-      body: {
-        restaurantId,
-        email,
-        role,
-        restaurantName,
-        inviterName
-      },
-    });
-
-    if (error) {
-      console.error("Error sending invitation:", error);
-      throw new Error(error.message);
-    }
-  } catch (error) {
-    console.error("Error in sendRestaurantInvitation:", error);
-    throw error;
-  }
-};
-
-// Cancel a pending invitation
-export const cancelInvitation = async (invitationId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('restaurant_invitations')
-      .delete()
-      .eq('id', invitationId);
-
-    if (error) {
-      console.error("Error canceling invitation:", error);
-      throw new Error(error.message);
-    }
-  } catch (error) {
-    console.error("Error in cancelInvitation:", error);
     throw error;
   }
 };
