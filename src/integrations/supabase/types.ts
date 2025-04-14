@@ -77,6 +77,50 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          id: string
+          invitation_token: string
+          restaurant_id: string
+          role: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by: string
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          restaurant_id: string
+          role: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          restaurant_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_invitations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_members: {
         Row: {
           created_at: string
@@ -165,6 +209,10 @@ export type Database = {
       is_restaurant_admin: {
         Args: { restaurant_id: string; user_id?: string }
         Returns: boolean
+      }
+      process_invitation: {
+        Args: { invitation_token: string; password?: string }
+        Returns: string
       }
     }
     Enums: {
