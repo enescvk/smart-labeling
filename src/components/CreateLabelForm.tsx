@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -61,24 +60,29 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
     
     setIsGenerating(true);
     
-    // Simulate network delay for demo purposes
-    setTimeout(() => {
-      const newBarcodeId = generateBarcodeId();
-      setBarcodeId(newBarcodeId);
-      
-      // Generate barcode SVG with product details
-      const svg = generateBarcodeSvg(newBarcodeId, {
-        product: formData.product,
-        preparedBy: formData.preparedBy,
-        containerType: formData.containerType,
-        preparedDate: formData.preparedDate,
-        expiryDate: formData.expiryDate
-      });
-      setBarcodeSvg(svg);
+    try {
+      // Simulate network delay for demo purposes
+      setTimeout(() => {
+        const newBarcodeId = generateBarcodeId();
+        setBarcodeId(newBarcodeId);
+        
+        // Generate barcode SVG with product details
+        const svg = generateBarcodeSvg(newBarcodeId, {
+          product: formData.product,
+          preparedBy: formData.preparedBy,
+          containerType: formData.containerType,
+          preparedDate: formData.preparedDate,
+          expiryDate: formData.expiryDate
+        });
+        setBarcodeSvg(svg);
+        setIsGenerating(false);
+        
+        toast.success("Barcode generated successfully!");
+      }, 800);
+    } catch (error) {
       setIsGenerating(false);
-      
-      toast.success("Barcode generated successfully!");
-    }, 800);
+      toast.error("Failed to generate barcode");
+    }
   };
   
   const handlePrint = async () => {

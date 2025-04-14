@@ -13,24 +13,39 @@ const CreateLabel: React.FC = () => {
   const queryClient = useQueryClient();
   
   const addLabelMutation = useMutation({
-    mutationFn: (data: LabelFormData & { barcodeId: string }) => {
-      return addInventoryItem({
-        id: data.barcodeId,
-        product: data.product,
-        preparedBy: data.preparedBy,
-        preparedDate: data.preparedDate,
-        expiryDate: data.expiryDate,
-        containerType: data.containerType,
-        status: "active"
-      });
+    mutationFn: async (data: LabelFormData & { barcodeId: string }) => {
+      try {
+        console.log("Starting mutation to add label to inventory:", data);
+        const result = await addInventoryItem({
+          id: data.barcodeId,
+          product: data.product,
+          preparedBy: data.preparedBy,
+          preparedDate: data.preparedDate,
+          expiryDate: data.expiryDate,
+          containerType: data.containerType,
+          status: "active"
+        });
+        console.log("Successfully added to inventory, returning result:", result);
+        return result;
+      } catch (error) {
+        console.error("Error in mutation function:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log("Invalidating inventory queries after successful mutation");
       queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
+    },
+    onError: (error) => {
+      console.error("Error in onError handler:", error);
+      toast.error("Failed to add label", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      });
     }
   });
   
   const handleSubmit = (data: LabelFormData & { barcodeId: string }) => {
-    console.log("Saving label to inventory:", data);
+    console.log("handleSubmit called with data:", data);
     
     addLabelMutation.mutate(data, {
       onSuccess: () => {

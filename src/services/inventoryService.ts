@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentRestaurantId } from "@/services/restaurantService";
 
@@ -139,10 +138,12 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
   try {
     const restaurantId = await getCurrentRestaurantId();
     if (!restaurantId) {
+      console.error("No restaurant ID available for creating inventory item");
       throw new Error("No restaurant selected");
     }
 
     console.log("Adding item to inventory with restaurant ID:", restaurantId);
+    console.log("Item data:", item);
 
     const { data, error } = await supabase.from("inventory").insert({
       id: item.id,
@@ -157,10 +158,11 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
 
     if (error) {
       console.error("Supabase error adding inventory item:", error);
-      throw new Error(error.message || "Failed to add inventory item");
+      throw new Error(`Database error: ${error.message || "Failed to add inventory item"}`);
     }
 
     if (!data || data.length === 0) {
+      console.error("No data returned after adding inventory item");
       throw new Error("No data returned after adding inventory item");
     }
 
@@ -168,7 +170,10 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
     return mapDatabaseItem(data[0]);
   } catch (error) {
     console.error("Exception in addInventoryItem:", error);
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Unknown error adding inventory item");
   }
 };
 
