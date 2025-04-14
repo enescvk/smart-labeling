@@ -107,8 +107,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         updated_at: member.updated_at,
         user: {
           // Fix TypeScript error - check if member.user has email property
-          email: typeof member.user === 'object' && member.user && 'email' in member.user 
-            ? member.user.email as string 
+          email: (member.user && typeof member.user === 'object' && 'email' in member.user) 
+            ? String(member.user.email) 
             : 'Unknown Email'
         }
       };
@@ -229,7 +229,11 @@ export const getRestaurantInvitations = async (restaurantId: string): Promise<Re
       throw new Error(error.message);
     }
 
-    return invitations || [];
+    // Cast the role field to ensure type safety
+    return (invitations || []).map(invitation => ({
+      ...invitation,
+      role: invitation.role as 'admin' | 'staff' | 'viewer'
+    }));
   } catch (error) {
     console.error("Error in getRestaurantInvitations:", error);
     throw error;

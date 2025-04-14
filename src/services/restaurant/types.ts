@@ -16,7 +16,7 @@ export type RestaurantMember = {
   updated_at: string;
   user?: {
     email: string;
-  };
+  } | null;
 };
 
 export type RestaurantInvitation = {
