@@ -5,7 +5,7 @@ import { CreateLabelForm, LabelFormData } from "../components/CreateLabelForm";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { addInventoryItem } from "../services/inventoryService";
+import { addInventoryItem } from "../services/inventory";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const CreateLabel: React.FC = () => {

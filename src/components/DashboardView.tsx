@@ -13,7 +13,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InventoryItem } from "../services/inventoryService";
+import { InventoryItem } from "../services/inventory";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 const CHART_COLORS = [

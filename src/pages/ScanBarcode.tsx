@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { BarcodeScanner } from "../components/BarcodeScanner";
@@ -7,16 +6,14 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { getItemById, updateItemStatus } from "../services/inventoryService";
+import { getItemById, updateItemStatus, InventoryItem } from "../services/inventory";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InventoryItem } from "../services/inventoryService";
 
 const ScanBarcode: React.FC = () => {
   const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
   
-  // Mutation for updating item status
   const updateStatusMutation = useMutation({
     mutationFn: (id: string) => updateItemStatus(id, "used"),
     onSuccess: () => {
@@ -52,7 +49,6 @@ const ScanBarcode: React.FC = () => {
           description: `${foundItem.product} has been marked as used in inventory.`
         });
         
-        // Reset found item
         setFoundItem(null);
       },
       onError: (error) => {

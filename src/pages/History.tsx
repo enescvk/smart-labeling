@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
@@ -6,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Barcode, Calendar, Clock, User, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { getInventoryItems } from "../services/inventoryService";
-import { InventoryItem } from "../services/inventoryService";
+import { getInventoryItems, InventoryItem } from "../services/inventory";
 import { useQuery } from "@tanstack/react-query";
 
 const History: React.FC = () => {
@@ -15,7 +13,6 @@ const History: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
   
-  // Fetch inventory data using React Query
   const { data: inventoryItems, isLoading, error } = useQuery({
     queryKey: ['inventoryItems'],
     queryFn: getInventoryItems
@@ -24,17 +21,14 @@ const History: React.FC = () => {
   useEffect(() => {
     if (!inventoryItems) return;
     
-    // Filter items based on active tab and search query
     let items = [...inventoryItems];
     
-    // Filter by status
     if (activeTab === "active") {
       items = items.filter(item => item.status === "active");
     } else if (activeTab === "used") {
       items = items.filter(item => item.status === "used");
     }
     
-    // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       items = items.filter(item => 
@@ -44,7 +38,6 @@ const History: React.FC = () => {
       );
     }
     
-    // Sort by most recent first
     items.sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
@@ -52,7 +45,6 @@ const History: React.FC = () => {
     setFilteredItems(items);
   }, [activeTab, searchQuery, inventoryItems]);
   
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
