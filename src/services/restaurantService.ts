@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -118,9 +119,11 @@ export const updateRestaurant = async (id: string, name: string): Promise<void> 
 // Check if the current user is an admin of a restaurant
 export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
   try {
+    console.log("Checking if user is admin of restaurant:", restaurantId);
+    
     const { data, error } = await supabase
-      .rpc('is_restaurant_admin', {
-        restaurant_id: restaurantId,
+      .rpc('is_admin_of_restaurant', {
+        p_restaurant_id: restaurantId,
       });
 
     if (error) {
@@ -128,6 +131,7 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
       return false;
     }
 
+    console.log("Admin check result:", data);
     return !!data;
   } catch (error) {
     console.error("Error in isRestaurantAdmin:", error);
@@ -275,13 +279,20 @@ export const sendRestaurantInvitation = async (
   role: 'admin' | 'staff'
 ): Promise<void> => {
   try {
-    // First, check if the user is an admin of the restaurant
+    // First, check if the user is an admin of the restaurant using the updated function name
     const { data: isAdmin, error: adminCheckError } = await supabase
-      .rpc('is_restaurant_admin', {
-        restaurant_id: restaurantId,
+      .rpc('is_admin_of_restaurant', {
+        p_restaurant_id: restaurantId,
       });
 
-    if (adminCheckError || !isAdmin) {
+    console.log("Admin check for invitation:", isAdmin, "for restaurant:", restaurantId);
+    
+    if (adminCheckError) {
+      console.error("Admin check error:", adminCheckError);
+      throw new Error(`Admin check failed: ${adminCheckError.message}`);
+    }
+
+    if (!isAdmin) {
       throw new Error("Only restaurant admins can send invitations");
     }
 
