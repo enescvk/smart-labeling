@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -23,11 +23,30 @@ Deno.serve(async (req) => {
       invitationToken 
     } = await req.json();
 
+    // Verify required parameters are present
+    if (!email || !invitationToken) {
+      console.error("Missing required parameters");
+      return new Response(
+        JSON.stringify({ error: "Missing required parameters" }),
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
+    }
+
     // Construct invitation link
-    const invitationLink = `${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/accept-invitation?token=${invitationToken}`;
+    const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173';
+    const invitationLink = `${siteUrl}/accept-invitation?token=${invitationToken}`;
+
+    console.log(`Sending invitation email to ${email} with role ${role}`);
+    console.log(`Invitation link: ${invitationLink}`);
 
     // Send invitation email
-    const { error } = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'Inventory App <onboarding@resend.dev>',
       to: [email],
       subject: 'You\'ve been invited to join a restaurant team',
@@ -41,11 +60,15 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
+      console.error('Error from Resend:', error);
       throw error;
     }
 
+    console.log('Email sent successfully:', data);
+
     return new Response(JSON.stringify({ 
-      message: 'Invitation sent successfully' 
+      message: 'Invitation sent successfully',
+      data
     }), {
       headers: { 
         ...corsHeaders, 
@@ -57,7 +80,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error sending invitation:', error);
     return new Response(JSON.stringify({ 
-      error: 'Failed to send invitation' 
+      error: 'Failed to send invitation',
+      details: error.message
     }), {
       headers: { 
         ...corsHeaders, 
