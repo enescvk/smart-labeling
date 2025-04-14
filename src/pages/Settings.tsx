@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -10,7 +11,11 @@ import {
   addRestaurantMember,
   removeRestaurantMember,
   RestaurantMember,
-  isRestaurantAdmin
+  isRestaurantAdmin,
+  getRestaurantInvitations,
+  sendRestaurantInvitation,
+  cancelInvitation,
+  RestaurantInvitation
 } from "@/services/restaurant";
 import { 
   Card, 
@@ -41,12 +46,19 @@ import {
   User, 
   Users,
   Store,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Mail,
+  AlertCircle,
+  Clock,
+  X
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -55,8 +67,9 @@ const Settings = () => {
   const [editingRestaurantId, setEditingRestaurantId] = useState<string | null>(null);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [newMemberEmail, setNewMemberEmail] = useState("");
-  const [newMemberRole, setNewMemberRole] = useState<"admin" | "staff">("staff");
+  const [newMemberRole, setNewMemberRole] = useState<"admin" | "staff" | "viewer">("viewer");
   const queryClient = useQueryClient();
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const { 
     data: restaurants = [], 
@@ -80,6 +93,16 @@ const Settings = () => {
   } = useQuery({
     queryKey: ['restaurant-members', selectedRestaurantId],
     queryFn: () => selectedRestaurantId ? getRestaurantMembers(selectedRestaurantId) : Promise.resolve([]),
+    enabled: !!selectedRestaurantId
+  });
+
+  const {
+    data: invitations = [],
+    isLoading: isLoadingInvitations,
+    refetch: refetchInvitations
+  } = useQuery({
+    queryKey: ['restaurant-invitations', selectedRestaurantId],
+    queryFn: () => selectedRestaurantId ? getRestaurantInvitations(selectedRestaurantId) : Promise.resolve([]),
     enabled: !!selectedRestaurantId
   });
 
@@ -140,7 +163,7 @@ const Settings = () => {
     mutationFn: ({ restaurantId, email, role }: { 
       restaurantId: string; 
       email: string; 
-      role: "admin" | "staff"; 
+      role: "admin" | "staff" | "viewer"; 
     }) => addRestaurantMember(restaurantId, email, role),
     onSuccess: () => {
       toast({
@@ -148,7 +171,7 @@ const Settings = () => {
         description: "The team member has been added successfully.",
       });
       setNewMemberEmail("");
-      setNewMemberRole("staff");
+      setNewMemberRole("viewer");
       queryClient.invalidateQueries({
         queryKey: ['restaurant-members']
       });
@@ -176,6 +199,54 @@ const Settings = () => {
     onError: (error) => {
       toast({
         title: "Error removing member",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const sendInvitationMutation = useMutation({
+    mutationFn: ({ restaurantId, email, role, restaurantName }: { 
+      restaurantId: string; 
+      email: string; 
+      role: "admin" | "staff" | "viewer";
+      restaurantName: string;
+    }) => sendRestaurantInvitation(restaurantId, email, role, restaurantName),
+    onSuccess: () => {
+      toast({
+        title: "Invitation sent",
+        description: "The team member has been invited successfully.",
+      });
+      setNewMemberEmail("");
+      setNewMemberRole("viewer");
+      setInviteDialogOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: ['restaurant-invitations']
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error sending invitation",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const cancelInvitationMutation = useMutation({
+    mutationFn: (invitationId: string) => cancelInvitation(invitationId),
+    onSuccess: () => {
+      toast({
+        title: "Invitation canceled",
+        description: "The invitation has been canceled successfully.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['restaurant-invitations']
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error canceling invitation",
         description: error.message,
         variant: "destructive",
       });
@@ -235,8 +306,50 @@ const Settings = () => {
     });
   };
 
+  const handleSendInvitation = async () => {
+    if (!selectedRestaurantId) {
+      toast({
+        title: "No restaurant selected",
+        description: "Please select a restaurant first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newMemberEmail.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter the email address of the person to invite.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Find the restaurant name
+    const restaurant = restaurants.find(r => r.id === selectedRestaurantId);
+    if (!restaurant) {
+      toast({
+        title: "Restaurant not found",
+        description: "The selected restaurant could not be found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    sendInvitationMutation.mutate({ 
+      restaurantId: selectedRestaurantId,
+      email: newMemberEmail,
+      role: newMemberRole,
+      restaurantName: restaurant.name
+    });
+  };
+
   const handleRemoveMember = async (memberId: string) => {
     removeMemberMutation.mutate(memberId);
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    cancelInvitationMutation.mutate(invitationId);
   };
 
   const startEditingRestaurant = (restaurant: Restaurant) => {
@@ -254,6 +367,28 @@ const Settings = () => {
       await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'staff':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'viewer':
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
 
@@ -392,7 +527,7 @@ const Settings = () => {
                             <div>
                               <h3 className="font-medium">{restaurant.name}</h3>
                               <p className="text-xs text-muted-foreground">
-                                Created on {new Date(restaurant.created_at).toLocaleDateString()}
+                                Created on {formatDate(restaurant.created_at)}
                               </p>
                             </div>
                             <div>
@@ -457,9 +592,69 @@ const Settings = () => {
                           <div className="space-y-6">
                             <div className="border rounded-md p-4">
                               <h3 className="font-medium mb-4">Add Team Member</h3>
+                              
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                  Add existing users or invite new ones to join your restaurant.
+                                </p>
+                                
+                                <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm">
+                                      <Mail className="h-4 w-4 mr-2" />
+                                      Send Invitation
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Invite Team Member</DialogTitle>
+                                      <DialogDescription>
+                                        Send an email invitation to join your restaurant team.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                      <div className="grid gap-2">
+                                        <Label htmlFor="invite-email">Email Address</Label>
+                                        <Input
+                                          id="invite-email"
+                                          placeholder="Enter email address"
+                                          type="email"
+                                          value={newMemberEmail}
+                                          onChange={(e) => setNewMemberEmail(e.target.value)}
+                                        />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label htmlFor="invite-role">Role</Label>
+                                        <Select
+                                          value={newMemberRole}
+                                          onValueChange={(value) => setNewMemberRole(value as 'admin' | 'staff' | 'viewer')}
+                                        >
+                                          <SelectTrigger id="invite-role">
+                                            <SelectValue placeholder="Select a role" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="viewer">Viewer (view only)</SelectItem>
+                                            <SelectItem value="staff">Staff</SelectItem>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button 
+                                        onClick={handleSendInvitation}
+                                        disabled={sendInvitationMutation.isPending}
+                                      >
+                                        {sendInvitationMutation.isPending ? "Sending..." : "Send Invitation"}
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                              
                               <div className="grid gap-4">
                                 <div className="grid gap-2">
-                                  <Label htmlFor="email">Email Address</Label>
+                                  <Label htmlFor="email">Email Address (Existing Users)</Label>
                                   <Input
                                     id="email"
                                     placeholder="Enter team member's email"
@@ -471,12 +666,13 @@ const Settings = () => {
                                   <Label htmlFor="role">Role</Label>
                                   <Select
                                     value={newMemberRole}
-                                    onValueChange={(value) => setNewMemberRole(value as 'admin' | 'staff')}
+                                    onValueChange={(value) => setNewMemberRole(value as 'admin' | 'staff' | 'viewer')}
                                   >
                                     <SelectTrigger id="role">
                                       <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="viewer">Viewer (view only)</SelectItem>
                                       <SelectItem value="staff">Staff</SelectItem>
                                       <SelectItem value="admin">Admin</SelectItem>
                                     </SelectContent>
@@ -486,11 +682,65 @@ const Settings = () => {
                                   onClick={handleAddMember}
                                   disabled={addMemberMutation.isPending}
                                 >
-                                  {addMemberMutation.isPending ? "Adding..." : "Add Team Member"}
+                                  {addMemberMutation.isPending ? "Adding..." : "Add Existing User"}
                                 </Button>
                               </div>
                             </div>
 
+                            {/* Pending Invitations */}
+                            <div>
+                              <h3 className="font-medium mb-4">Pending Invitations</h3>
+                              {isLoadingInvitations ? (
+                                <div className="text-center py-4">Loading invitations...</div>
+                              ) : invitations.length === 0 ? (
+                                <div className="text-center py-4 border rounded-md">
+                                  <p className="text-muted-foreground">No pending invitations</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {invitations.map((invitation) => (
+                                    <div key={invitation.id} className="flex justify-between items-center p-3 border rounded-md">
+                                      <div>
+                                        <div className="flex items-center">
+                                          <h4 className="font-medium">{invitation.email}</h4>
+                                          <Badge 
+                                            variant="outline" 
+                                            className={`ml-2 ${getRoleBadgeColor(invitation.role)}`}
+                                          >
+                                            {invitation.role}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex items-center mt-1">
+                                          <Clock className="h-3 w-3 text-muted-foreground mr-1" />
+                                          <p className="text-xs text-muted-foreground">
+                                            Expires {formatDate(invitation.expires_at)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button 
+                                              size="sm" 
+                                              variant="ghost"
+                                              onClick={() => handleCancelInvitation(invitation.id)}
+                                              disabled={cancelInvitationMutation.isPending}
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Cancel invitation</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Current team members */}
                             <div>
                               <h3 className="font-medium mb-4">Current Team Members</h3>
                               {isLoadingMembers ? (
@@ -504,14 +754,21 @@ const Settings = () => {
                                   {members.map((member) => (
                                     <div key={member.id} className="flex justify-between items-center p-3 border rounded-md">
                                       <div>
-                                        <h4 className="font-medium">{member.user?.email}</h4>
-                                        <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                                        <div className="flex items-center">
+                                          <h4 className="font-medium">{member.user?.email}</h4>
+                                          <Badge 
+                                            variant="outline" 
+                                            className={`ml-2 ${getRoleBadgeColor(member.role)}`}
+                                          >
+                                            {member.role}
+                                          </Badge>
+                                        </div>
                                       </div>
                                       <Button 
                                         size="sm" 
                                         variant="destructive"
                                         onClick={() => handleRemoveMember(member.id)}
-                                        disabled={removeMemberMutation.isPending}
+                                        disabled={removeMemberMutation.isPending || member.id === 'current-user'}
                                       >
                                         <Trash className="h-4 w-4" />
                                       </Button>

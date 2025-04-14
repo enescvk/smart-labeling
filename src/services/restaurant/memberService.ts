@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { RestaurantMember } from "./types";
+import type { RestaurantMember, RestaurantInvitation } from "./types";
 
 // Check if the current user is an admin of a restaurant
 export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
@@ -73,7 +73,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           id: member.id,
           user_id: member.user_id,
           restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff',
+          role: member.role as 'admin' | 'staff' | 'viewer',
           created_at: member.created_at,
           updated_at: member.updated_at,
           user: {
@@ -88,7 +88,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           id: member.id,
           user_id: member.user_id,
           restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff',
+          role: member.role as 'admin' | 'staff' | 'viewer',
           created_at: member.created_at,
           updated_at: member.updated_at,
           user: {
@@ -102,11 +102,14 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         id: member.id,
         user_id: member.user_id,
         restaurant_id: member.restaurant_id,
-        role: member.role as 'admin' | 'staff',
+        role: member.role as 'admin' | 'staff' | 'viewer',
         created_at: member.created_at,
         updated_at: member.updated_at,
         user: {
-          email: member.user.email
+          // Fix TypeScript error - check if member.user has email property
+          email: typeof member.user === 'object' && member.user && 'email' in member.user 
+            ? member.user.email as string 
+            : 'Unknown Email'
         }
       };
     });
@@ -157,7 +160,7 @@ const getFallbackCurrentUserMember = async (
 };
 
 // Add a user to a restaurant
-export const addRestaurantMember = async (restaurantId: string, email: string, role: 'admin' | 'staff'): Promise<void> => {
+export const addRestaurantMember = async (restaurantId: string, email: string, role: 'admin' | 'staff' | 'viewer'): Promise<void> => {
   try {
     // First find the user by email
     const { data: users, error: userError } = await supabase
@@ -207,6 +210,79 @@ export const removeRestaurantMember = async (memberId: string): Promise<void> =>
     }
   } catch (error) {
     console.error("Error in removeRestaurantMember:", error);
+    throw error;
+  }
+};
+
+// Get pending invitations for a restaurant
+export const getRestaurantInvitations = async (restaurantId: string): Promise<RestaurantInvitation[]> => {
+  try {
+    const { data: invitations, error } = await supabase
+      .from('restaurant_invitations')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .is('accepted_at', null)
+      .gt('expires_at', new Date().toISOString());
+
+    if (error) {
+      console.error("Error fetching restaurant invitations:", error);
+      throw new Error(error.message);
+    }
+
+    return invitations || [];
+  } catch (error) {
+    console.error("Error in getRestaurantInvitations:", error);
+    throw error;
+  }
+};
+
+// Send invitation to join a restaurant
+export const sendRestaurantInvitation = async (
+  restaurantId: string, 
+  email: string, 
+  role: 'admin' | 'staff' | 'viewer',
+  restaurantName: string
+): Promise<void> => {
+  try {
+    // Get current user for the inviter name
+    const { data: { user } } = await supabase.auth.getUser();
+    const inviterName = user?.email?.split('@')[0] || "Restaurant Admin";
+
+    // Call the edge function to send invitation
+    const { error } = await supabase.functions.invoke("send-invitation", {
+      body: {
+        restaurantId,
+        email,
+        role,
+        restaurantName,
+        inviterName
+      },
+    });
+
+    if (error) {
+      console.error("Error sending invitation:", error);
+      throw new Error(error.message);
+    }
+  } catch (error) {
+    console.error("Error in sendRestaurantInvitation:", error);
+    throw error;
+  }
+};
+
+// Cancel a pending invitation
+export const cancelInvitation = async (invitationId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('restaurant_invitations')
+      .delete()
+      .eq('id', invitationId);
+
+    if (error) {
+      console.error("Error canceling invitation:", error);
+      throw new Error(error.message);
+    }
+  } catch (error) {
+    console.error("Error in cancelInvitation:", error);
     throw error;
   }
 };
