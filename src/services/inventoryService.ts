@@ -136,28 +136,37 @@ export const getExpiredItems = async (): Promise<InventoryItem[]> => {
 
 // Add inventory item
 export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): Promise<InventoryItem> => {
-  const restaurantId = await getCurrentRestaurantId();
-  if (!restaurantId) {
-    throw new Error("No restaurant selected");
-  }
+  try {
+    const restaurantId = await getCurrentRestaurantId();
+    if (!restaurantId) {
+      throw new Error("No restaurant selected");
+    }
 
-  const { data, error } = await supabase.from("inventory").insert({
-    id: item.id,
-    product: item.product,
-    prepared_by: item.preparedBy,
-    prepared_date: item.preparedDate,
-    expiry_date: item.expiryDate,
-    container_type: item.containerType,
-    status: item.status,
-    restaurant_id: restaurantId,
-  }).select();
+    const { data, error } = await supabase.from("inventory").insert({
+      id: item.id,
+      product: item.product,
+      prepared_by: item.preparedBy,
+      prepared_date: item.preparedDate,
+      expiry_date: item.expiryDate,
+      container_type: item.containerType,
+      status: item.status,
+      restaurant_id: restaurantId,
+    }).select();
 
-  if (error) {
-    console.error("Error adding inventory item:", error);
+    if (error) {
+      console.error("Error adding inventory item:", error);
+      throw new Error(error.message || "Failed to add inventory item");
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error("No data returned after adding inventory item");
+    }
+
+    return mapDatabaseItem(data[0]);
+  } catch (error) {
+    console.error("Exception in addInventoryItem:", error);
     throw error;
   }
-
-  return mapDatabaseItem(data[0]);
 };
 
 // Get item by ID

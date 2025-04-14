@@ -32,7 +32,7 @@ const CreateLabel: React.FC = () => {
   const handleSubmit = (data: LabelFormData & { barcodeId: string }) => {
     addLabelMutation.mutate(data, {
       onSuccess: () => {
-        toast("Label added to inventory", {
+        toast.success("Label added to inventory", {
           description: `${data.product} has been added to inventory.`,
           action: {
             label: "View Inventory",
@@ -41,6 +41,7 @@ const CreateLabel: React.FC = () => {
         });
       },
       onError: (error) => {
+        console.error("Error adding label:", error);
         toast.error("Failed to add label", {
           description: error instanceof Error ? error.message : "An unexpected error occurred"
         });
