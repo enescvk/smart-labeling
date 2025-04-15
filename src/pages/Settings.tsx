@@ -570,6 +570,31 @@ const Settings = () => {
                                 </div>
                               )}
                             </div>
+                            <div>
+                              <h3 className="font-medium mb-4">Pending Team Members</h3>
+                              {isLoadingPendingInvitations ? (
+                                <div className="text-center py-4">Loading pending invitations...</div>
+                              ) : !pendingInvitations || pendingInvitations.length === 0 ? (
+                                <div className="text-center py-6 border rounded-md">
+                                  <p className="text-muted-foreground">No pending invitations</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {pendingInvitations.map((invitation) => (
+                                    <div key={invitation.id} className="flex justify-between items-center p-3 border rounded-md bg-muted/30">
+                                      <div>
+                                        <h4 className="font-medium">{invitation.email}</h4>
+                                        <p className="text-xs text-muted-foreground">
+                                          Invited as <span className="capitalize">{invitation.role}</span> •{' '}
+                                          Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                      <Badge variant="secondary">Pending</Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           <div className="text-center py-6 border rounded-md">
@@ -586,32 +611,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
-        <div className="mt-6">
-          <h3 className="font-medium mb-4">Pending Team Members</h3>
-          {isLoadingPendingInvitations ? (
-            <div className="text-center py-4">Loading pending invitations...</div>
-          ) : !pendingInvitations || pendingInvitations.length === 0 ? (
-            <div className="text-center py-6 border rounded-md">
-              <p className="text-muted-foreground">No pending invitations</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {pendingInvitations.map((invitation) => (
-                <div key={invitation.id} className="flex justify-between items-center p-3 border rounded-md bg-muted/30">
-                  <div>
-                    <h4 className="font-medium">{invitation.email}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Invited as <span className="capitalize">{invitation.role}</span> •{' '}
-                      Expires {new Date(invitation.expires_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant="secondary">Pending</Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </Layout>
   );
