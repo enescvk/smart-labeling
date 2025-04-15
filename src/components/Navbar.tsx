@@ -12,31 +12,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 import { useQuery } from "@tanstack/react-query";
 import { getUserRestaurants } from "@/services/restaurants";
-import { useRestaurantStore } from "@/stores/restaurantStore";
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
-
-  const { data: restaurants = [] } = useQuery({
-    queryKey: ['restaurants'],
-    queryFn: getUserRestaurants
-  });
-
-  const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
-
-  useEffect(() => {
-    if (restaurants.length > 0 && !selectedRestaurant) {
-      setSelectedRestaurant(restaurants[0]);
-    }
-  }, [restaurants, selectedRestaurant, setSelectedRestaurant]);
+  const { selectedRestaurant } = useRestaurantStore();
 
   const routes = [
     {
@@ -110,35 +96,7 @@ export const Navbar: React.FC = () => {
             ))}
           </div>
           
-          <div className="flex items-center space-x-2">
-            {user && restaurants.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="mr-2">
-                    <Store className="h-4 w-4 mr-2" />
-                    {selectedRestaurant?.name || "Select Restaurant"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Switch Restaurant</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup 
-                    value={selectedRestaurant?.id} 
-                    onValueChange={(value) => {
-                      const restaurant = restaurants.find(r => r.id === value);
-                      if (restaurant) setSelectedRestaurant(restaurant);
-                    }}
-                  >
-                    {restaurants.map((restaurant) => (
-                      <DropdownMenuRadioItem key={restaurant.id} value={restaurant.id}>
-                        {restaurant.name}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
+          <div className="flex items-center">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -20,16 +20,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Edit, Plus } from "lucide-react";
+import { Edit, Plus, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createRestaurant, getUserRestaurants, updateRestaurant } from "@/services/restaurants/restaurantService";
 import type { Restaurant } from "@/services/restaurants/types";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 export const RestaurantsTab = () => {
   const [newRestaurantName, setNewRestaurantName] = useState("");
   const [editRestaurantName, setEditRestaurantName] = useState("");
   const [editingRestaurantId, setEditingRestaurantId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
 
   const {
     data: restaurants = [],
@@ -193,13 +195,28 @@ export const RestaurantsTab = () => {
                   </div>
                 ) : (
                   <>
-                    <div>
-                      <h3 className="font-medium">{restaurant.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Created on {new Date(restaurant.created_at).toLocaleDateString()}
-                      </p>
+                    <div className="flex items-center gap-4 flex-grow">
+                      <div>
+                        <h3 className="font-medium">{restaurant.name}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          Created on {new Date(restaurant.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {selectedRestaurant?.id === restaurant.id && (
+                        <span className="text-sm text-green-600 flex items-center gap-1">
+                          <Check className="h-4 w-4" /> Selected
+                        </span>
+                      )}
                     </div>
-                    <div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm"
+                        variant={selectedRestaurant?.id === restaurant.id ? "secondary" : "default"}
+                        onClick={() => setSelectedRestaurant(restaurant)}
+                        disabled={selectedRestaurant?.id === restaurant.id}
+                      >
+                        {selectedRestaurant?.id === restaurant.id ? "Selected" : "Select"}
+                      </Button>
                       <Button 
                         size="sm" 
                         variant="ghost" 
