@@ -1,10 +1,12 @@
 
 import { InventoryItem } from "./types";
 import { getActiveInventoryItems } from "./queries";
+import { supabase } from "@/integrations/supabase/client";
+import { mapDatabaseItem } from "./types";
 
 // Get items that are about to expire (within the next 2 days)
-export const getExpiringItems = async (): Promise<InventoryItem[]> => {
-  const items = await getActiveInventoryItems();
+export const getExpiringItems = async (restaurantId?: string | null): Promise<InventoryItem[]> => {
+  const items = await getActiveInventoryItems(restaurantId);
   const today = new Date();
   const twoDaysLater = new Date();
   twoDaysLater.setDate(today.getDate() + 2);
@@ -19,8 +21,8 @@ export const getExpiringItems = async (): Promise<InventoryItem[]> => {
 };
 
 // Get expired items
-export const getExpiredItems = async (): Promise<InventoryItem[]> => {
-  const activeItems = await getActiveInventoryItems();
+export const getExpiredItems = async (restaurantId?: string | null): Promise<InventoryItem[]> => {
+  const activeItems = await getActiveInventoryItems(restaurantId);
   const today = new Date();
 
   return activeItems.filter((item) => {
@@ -30,13 +32,9 @@ export const getExpiredItems = async (): Promise<InventoryItem[]> => {
 };
 
 // Get recently created items (in the last 7 days)
-export const getRecentItems = async (): Promise<InventoryItem[]> => {
-  const { supabase } = await import("@/integrations/supabase/client");
-  const { getCurrentRestaurantId } = await import("@/services/restaurants/restaurantService");
-  const { mapDatabaseItem } = await import("./types");
-
-  const restaurantId = await getCurrentRestaurantId();
+export const getRecentItems = async (restaurantId?: string | null): Promise<InventoryItem[]> => {
   if (!restaurantId) {
+    console.log("No restaurant ID provided to getRecentItems");
     return [];
   }
 

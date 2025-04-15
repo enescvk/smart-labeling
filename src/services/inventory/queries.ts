@@ -1,12 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrentRestaurantId } from "@/services/restaurants/restaurantService";
 import { InventoryItem, mapDatabaseItem } from "./types";
 
 // Get all inventory items
-export const getInventoryItems = async (): Promise<InventoryItem[]> => {
-  const restaurantId = await getCurrentRestaurantId();
+export const getInventoryItems = async (restaurantId?: string | null): Promise<InventoryItem[]> => {
   if (!restaurantId) {
+    console.log("No restaurant ID provided to getInventoryItems");
     return [];
   }
 
@@ -25,9 +24,9 @@ export const getInventoryItems = async (): Promise<InventoryItem[]> => {
 };
 
 // Get active inventory items
-export const getActiveInventoryItems = async (): Promise<InventoryItem[]> => {
-  const restaurantId = await getCurrentRestaurantId();
+export const getActiveInventoryItems = async (restaurantId?: string | null): Promise<InventoryItem[]> => {
   if (!restaurantId) {
+    console.log("No restaurant ID provided to getActiveInventoryItems");
     return [];
   }
 
@@ -47,9 +46,9 @@ export const getActiveInventoryItems = async (): Promise<InventoryItem[]> => {
 };
 
 // Get item by ID
-export const getItemById = async (id: string): Promise<InventoryItem | null> => {
-  const restaurantId = await getCurrentRestaurantId();
+export const getItemById = async (id: string, restaurantId?: string | null): Promise<InventoryItem | null> => {
   if (!restaurantId) {
+    console.log("No restaurant ID provided to getItemById");
     return null;
   }
 
