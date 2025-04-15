@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrentRestaurantId } from "@/services/restaurantService";
+import { getCurrentRestaurantId } from "@/services/restaurants/restaurantService";
 import { InventoryItem, mapDatabaseItem } from "./types";
 
 // Add inventory item

@@ -32,7 +32,7 @@ export const getExpiredItems = async (): Promise<InventoryItem[]> => {
 // Get recently created items (in the last 7 days)
 export const getRecentItems = async (): Promise<InventoryItem[]> => {
   const { supabase } = await import("@/integrations/supabase/client");
-  const { getCurrentRestaurantId } = await import("@/services/restaurantService");
+  const { getCurrentRestaurantId } = await import("@/services/restaurants/restaurantService");
   const { mapDatabaseItem } = await import("./types");
 
   const restaurantId = await getCurrentRestaurantId();

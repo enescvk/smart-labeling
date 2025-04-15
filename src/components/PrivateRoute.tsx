@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
-import { getCurrentRestaurantId, createRestaurant, getUserRestaurants } from "@/services/restaurantService";
+import { getCurrentRestaurantId, createRestaurant, getUserRestaurants } from "@/services/restaurants"; 
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 

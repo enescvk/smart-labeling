@@ -1,19 +1,23 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { 
   createRestaurant, 
   getUserRestaurants, 
-  Restaurant, 
-  updateRestaurant,
+  updateRestaurant 
+} from "@/services/restaurants/restaurantService";
+import { 
   getRestaurantMembers,
-  addRestaurantMember,
   removeRestaurantMember,
-  RestaurantMember,
-  isRestaurantAdmin,
+  isRestaurantAdmin 
+} from "@/services/restaurants/memberService";
+import {
   sendRestaurantInvitation
-} from "@/services/restaurantService";
+} from "@/services/restaurants/invitationService";
+import { 
+  Restaurant,
+  RestaurantMember 
+} from "@/services/restaurants/types";
 import { 
   Card, 
   CardContent, 
@@ -71,7 +75,7 @@ const Settings = () => {
   });
 
   useEffect(() => {
-    if (restaurants.length > 0 && !selectedRestaurantId) {
+    if (restaurants && restaurants.length > 0 && !selectedRestaurantId) {
       setSelectedRestaurantId(restaurants[0].id);
     }
   }, [restaurants, selectedRestaurantId]);
@@ -250,7 +254,6 @@ const Settings = () => {
       console.error("Invitation error:", error);
       const errorMsg = error.message || "Failed to send invitation";
       
-      // Show a more user-friendly message for duplicate invitations
       if (errorMsg.includes("duplicate key") || errorMsg.includes("unique constraint")) {
         toast({
           title: "Invitation Updated",
@@ -399,14 +402,14 @@ const Settings = () => {
               <CardContent>
                 {isLoadingRestaurants ? (
                   <div className="text-center py-6">Loading restaurants...</div>
-                ) : restaurants.length === 0 ? (
+                ) : restaurants && restaurants.length === 0 ? (
                   <div className="text-center py-10">
                     <p className="text-muted-foreground">No restaurants found</p>
                     <p className="text-sm mt-2">Create your first restaurant to get started</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {restaurants.map((restaurant) => (
+                    {restaurants && restaurants.map((restaurant) => (
                       <div key={restaurant.id} className="flex justify-between items-center p-4 border rounded-md">
                         {editingRestaurantId === restaurant.id ? (
                           <div className="flex gap-2 flex-grow">
@@ -459,7 +462,7 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {restaurants.length === 0 ? (
+                {!restaurants || restaurants.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-muted-foreground">You need to create a restaurant first</p>
                   </div>
@@ -530,13 +533,13 @@ const Settings = () => {
                               <h3 className="font-medium mb-4">Current Team Members</h3>
                               {isLoadingMembers ? (
                                 <div className="text-center py-4">Loading team members...</div>
-                              ) : members.length === 0 ? (
+                              ) : !members || members.length === 0 ? (
                                 <div className="text-center py-6 border rounded-md">
                                   <p className="text-muted-foreground">No team members found</p>
                                 </div>
                               ) : (
                                 <div className="space-y-2">
-                                  {members.map((member) => (
+                                  {members && members.map((member) => (
                                     <div key={member.id} className="flex justify-between items-center p-3 border rounded-md">
                                       <div>
                                         <h4 className="font-medium">{member.user?.email}</h4>

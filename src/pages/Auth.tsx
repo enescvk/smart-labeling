@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { Spinner } from "@/components/ui/spinner";
-import { createRestaurant, getCurrentRestaurantName } from "@/services/restaurantService";
+import { createRestaurant, getCurrentRestaurantName } from "@/services/restaurants/restaurantService";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
