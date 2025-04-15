@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -57,6 +58,7 @@ const Settings = () => {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newMemberRole, setNewMemberRole] = useState<"admin" | "staff">("staff");
+  const [isInvitationLoading, setIsInvitationLoading] = useState(false);
   const queryClient = useQueryClient();
 
   const { 
@@ -230,6 +232,7 @@ const Settings = () => {
     }
 
     try {
+      setIsInvitationLoading(true);
       await sendRestaurantInvitation(
         selectedRestaurantId, 
         newMemberEmail, 
@@ -244,11 +247,26 @@ const Settings = () => {
       setNewMemberEmail("");
       setNewMemberRole("staff");
     } catch (error: any) {
-      toast({
-        title: "Error Sending Invitation",
-        description: error.message || "Failed to send invitation",
-        variant: "destructive",
-      });
+      console.error("Invitation error:", error);
+      const errorMsg = error.message || "Failed to send invitation";
+      
+      // Show a more user-friendly message for duplicate invitations
+      if (errorMsg.includes("duplicate key") || errorMsg.includes("unique constraint")) {
+        toast({
+          title: "Invitation Updated",
+          description: `A previous invitation for ${newMemberEmail} has been updated with the new role.`,
+        });
+        setNewMemberEmail("");
+        setNewMemberRole("staff");
+      } else {
+        toast({
+          title: "Error Sending Invitation",
+          description: errorMsg,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsInvitationLoading(false);
     }
   };
 
@@ -501,9 +519,9 @@ const Settings = () => {
                                 </div>
                                 <Button 
                                   onClick={handleAddMember}
-                                  disabled={addMemberMutation.isPending}
+                                  disabled={isInvitationLoading}
                                 >
-                                  {addMemberMutation.isPending ? "Adding..." : "Add Team Member"}
+                                  {isInvitationLoading ? "Sending..." : "Add Team Member"}
                                 </Button>
                               </div>
                             </div>

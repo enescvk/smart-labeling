@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export type Restaurant = {
@@ -278,7 +279,7 @@ export const sendRestaurantInvitation = async (
   role: 'admin' | 'staff'
 ): Promise<void> => {
   try {
-    // First, check if the user is an admin of the restaurant using the updated function name
+    // First, check if the user is an admin of the restaurant
     const { data: isAdmin, error: adminCheckError } = await supabase
       .rpc('is_admin_of_restaurant', {
         p_restaurant_id: restaurantId,
@@ -295,20 +296,59 @@ export const sendRestaurantInvitation = async (
       throw new Error("Only restaurant admins can send invitations");
     }
 
-    // Create an invitation record
-    const { data: invitationData, error: insertError } = await supabase
+    // Check if there's already an invitation for this email and restaurant
+    const { data: existingInvitation, error: checkError } = await supabase
       .from('restaurant_invitations')
-      .insert({
-        restaurant_id: restaurantId,
-        email,
-        role,
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      })
-      .select('invitation_token')
-      .single();
+      .select('id, role, invitation_token')
+      .eq('restaurant_id', restaurantId)
+      .eq('email', email)
+      .maybeSingle();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error("Error checking existing invitations:", checkError);
+      throw checkError;
+    }
+    
+    let invitationToken;
+    
+    if (existingInvitation) {
+      console.log("Found existing invitation:", existingInvitation);
+      
+      // Update the existing invitation with the new role and reset expiry
+      const { error: updateError } = await supabase
+        .from('restaurant_invitations')
+        .update({
+          role: role,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          accepted_at: null, // Reset accepted_at if it was previously accepted
+        })
+        .eq('id', existingInvitation.id);
+        
+      if (updateError) {
+        console.error("Error updating invitation:", updateError);
+        throw updateError;
+      }
+      
+      invitationToken = existingInvitation.invitation_token;
+    } else {
+      // Create a new invitation record
+      const { data: newInvitation, error: insertError } = await supabase
+        .from('restaurant_invitations')
+        .insert({
+          restaurant_id: restaurantId,
+          email,
+          role,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select('invitation_token')
+        .single();
 
-    if (insertError) {
-      throw insertError;
+      if (insertError) {
+        console.error("Error creating invitation:", insertError);
+        throw insertError;
+      }
+      
+      invitationToken = newInvitation.invitation_token;
     }
 
     // Call the edge function to send the invitation email
@@ -317,17 +357,18 @@ export const sendRestaurantInvitation = async (
         restaurantId,
         email,
         role,
-        invitationToken: invitationData.invitation_token
+        invitationToken
       })
     });
 
-    // In test mode, we might get a successful response even though the email wasn't sent to the target recipient
+    // Check for edge function errors
     if (response.error) {
-      throw response.error;
+      console.error("Edge function error:", response.error);
+      throw new Error(response.error.message || "Failed to send invitation email");
     }
 
     console.log('Invitation processed successfully');
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending restaurant invitation:", error);
     throw error;
   }
