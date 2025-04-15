@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Barcode, Clock, Search, ShoppingBag, AlertTriangle, BarChart } from "lucide-react";
+import { Barcode, Clock, Search, ShoppingBag, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -15,7 +15,6 @@ import {
   getExpiredItems,
   InventoryItem 
 } from "../services/inventoryService";
-import { DashboardView } from "../components/DashboardView";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const Index: React.FC = () => {
@@ -198,151 +197,7 @@ const Index: React.FC = () => {
             <TabsTrigger value="recent">Recent</TabsTrigger>
             <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
             <TabsTrigger value="expired">Expired</TabsTrigger>
-            <TabsTrigger value="dashboard">
-              <BarChart className="h-4 w-4 mr-1" />
-              Dashboard
-            </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="overview" className="mt-0">
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((index) => (
-                  <Card key={index} className="p-6 h-48 animate-pulse">
-                    <div className="h-4 bg-kitchen-100 rounded w-3/4 mb-4"></div>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-3/4"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : activeItems.length > 0 ? (
-              <motion.div 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {activeItems.map((item, index) => (
-                  <motion.div key={item.id} variants={itemVariants}>
-                    <InventoryCard item={item} index={index} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-kitchen-500">No active items found</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="recent" className="mt-0">
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((index) => (
-                  <Card key={index} className="p-6 h-48 animate-pulse">
-                    <div className="h-4 bg-kitchen-100 rounded w-3/4 mb-4"></div>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-3/4"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : recentItems.length > 0 ? (
-              <motion.div 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {recentItems.map((item, index) => (
-                  <motion.div key={item.id} variants={itemVariants}>
-                    <InventoryCard item={item} index={index} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-kitchen-500">No recent items found</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="expiring" className="mt-0">
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((index) => (
-                  <Card key={index} className="p-6 h-48 animate-pulse">
-                    <div className="h-4 bg-kitchen-100 rounded w-3/4 mb-4"></div>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-3/4"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : expiringItems.length > 0 ? (
-              <motion.div 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {expiringItems.map((item, index) => (
-                  <motion.div key={item.id} variants={itemVariants}>
-                    <InventoryCard item={item} index={index} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-kitchen-500">No items expiring soon</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="expired" className="mt-0">
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((index) => (
-                  <Card key={index} className="p-6 h-48 animate-pulse">
-                    <div className="h-4 bg-kitchen-100 rounded w-3/4 mb-4"></div>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-full"></div>
-                      <div className="h-3 bg-kitchen-100 rounded w-3/4"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : expiredItems.length > 0 ? (
-              <motion.div 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {expiredItems.map((item, index) => (
-                  <motion.div key={item.id} variants={itemVariants}>
-                    <InventoryCard item={item} index={index} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-kitchen-500">No expired items found</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="dashboard" className="mt-0">
-            <DashboardView items={[...activeItems, ...expiredItems]} />
-          </TabsContent>
         </Tabs>
       </div>
     </Layout>
