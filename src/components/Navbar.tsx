@@ -1,8 +1,7 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard, Settings as SettingsIcon } from "lucide-react";
+import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard, Settings as SettingsIcon, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,13 +12,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { getUserRestaurants } from "@/services/restaurants";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+
+  const { data: restaurants = [] } = useQuery({
+    queryKey: ['restaurants'],
+    queryFn: getUserRestaurants
+  });
+
+  const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
+
+  useEffect(() => {
+    if (restaurants.length > 0 && !selectedRestaurant) {
+      setSelectedRestaurant(restaurants[0]);
+    }
+  }, [restaurants, selectedRestaurant, setSelectedRestaurant]);
 
   const routes = [
     {
@@ -58,8 +75,14 @@ export const Navbar: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
       <nav className="container flex items-center justify-between h-16 px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex flex-col items-start">
             <span className="hidden font-bold text-xl text-kitchen-900 sm:inline-block">KitchenLabel</span>
+            {selectedRestaurant && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Store className="h-3 w-3" />
+                {selectedRestaurant.name}
+              </span>
+            )}
           </Link>
         </div>
 
@@ -88,6 +111,34 @@ export const Navbar: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            {user && restaurants.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="mr-2">
+                    <Store className="h-4 w-4 mr-2" />
+                    {selectedRestaurant?.name || "Select Restaurant"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Switch Restaurant</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup 
+                    value={selectedRestaurant?.id} 
+                    onValueChange={(value) => {
+                      const restaurant = restaurants.find(r => r.id === value);
+                      if (restaurant) setSelectedRestaurant(restaurant);
+                    }}
+                  >
+                    {restaurants.map((restaurant) => (
+                      <DropdownMenuRadioItem key={restaurant.id} value={restaurant.id}>
+                        {restaurant.name}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

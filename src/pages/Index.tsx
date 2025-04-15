@@ -16,54 +16,55 @@ import {
   InventoryItem 
 } from "../services/inventoryService";
 import { DashboardView } from "../components/DashboardView";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const Index: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Fetch all active items
+  const { selectedRestaurant } = useRestaurantStore();
+  
   const { 
     data: activeItems = [], 
     isLoading: isLoadingActive 
   } = useQuery({
-    queryKey: ['inventoryItems', 'active'],
-    queryFn: getActiveInventoryItems
+    queryKey: ['inventoryItems', 'active', selectedRestaurant?.id],
+    queryFn: () => getActiveInventoryItems(selectedRestaurant?.id),
+    enabled: !!selectedRestaurant
   });
   
-  // Fetch recent items
   const { 
     data: recentItems = [], 
     isLoading: isLoadingRecent 
   } = useQuery({
-    queryKey: ['inventoryItems', 'recent'],
-    queryFn: getRecentItems
+    queryKey: ['inventoryItems', 'recent', selectedRestaurant?.id],
+    queryFn: () => getRecentItems(selectedRestaurant?.id),
+    enabled: !!selectedRestaurant
   });
   
-  // Fetch expiring items
   const { 
     data: expiringItems = [], 
     isLoading: isLoadingExpiring 
   } = useQuery({
-    queryKey: ['inventoryItems', 'expiring'],
-    queryFn: getExpiringItems
+    queryKey: ['inventoryItems', 'expiring', selectedRestaurant?.id],
+    queryFn: () => getExpiringItems(selectedRestaurant?.id),
+    enabled: !!selectedRestaurant
   });
   
-  // Fetch expired items
   const { 
     data: expiredItems = [], 
     isLoading: isLoadingExpired 
   } = useQuery({
-    queryKey: ['inventoryItems', 'expired'],
-    queryFn: getExpiredItems
+    queryKey: ['inventoryItems', 'expired', selectedRestaurant?.id],
+    queryFn: () => getExpiredItems(selectedRestaurant?.id),
+    enabled: !!selectedRestaurant
   });
   
   const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring || isLoadingExpired;
   
-  // Stats calculations
   const activeItemsCount = activeItems.length;
-  const usedItemsCount = 0; // This would need a separate query to get an accurate count
+  const usedItemsCount = 0;
   const totalItems = activeItemsCount + usedItemsCount;
   
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -101,7 +102,6 @@ const Index: React.FC = () => {
           </motion.p>
         </header>
         
-        {/* Stats Cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((index) => (
@@ -204,7 +204,6 @@ const Index: React.FC = () => {
             </TabsTrigger>
           </TabsList>
           
-          {/* Overview Tab */}
           <TabsContent value="overview" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -239,7 +238,6 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
-          {/* Recent Tab */}
           <TabsContent value="recent" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -274,7 +272,6 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
-          {/* Expiring Tab */}
           <TabsContent value="expiring" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -309,7 +306,6 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
-          {/* Expired Tab */}
           <TabsContent value="expired" className="mt-0">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -344,7 +340,6 @@ const Index: React.FC = () => {
             )}
           </TabsContent>
           
-          {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="mt-0">
             <DashboardView items={[...activeItems, ...expiredItems]} />
           </TabsContent>
