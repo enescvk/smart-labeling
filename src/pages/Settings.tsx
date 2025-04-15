@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -9,7 +10,8 @@ import {
 import { 
   getRestaurantMembers,
   removeRestaurantMember,
-  isRestaurantAdmin 
+  isRestaurantAdmin,
+  addRestaurantMember
 } from "@/services/restaurants/memberService";
 import {
   sendRestaurantInvitation
