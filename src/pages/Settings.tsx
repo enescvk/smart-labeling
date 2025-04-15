@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +13,8 @@ import {
   addRestaurantMember
 } from "@/services/restaurants/memberService";
 import {
-  sendRestaurantInvitation
+  sendRestaurantInvitation,
+  getPendingInvitations
 } from "@/services/restaurants/invitationService";
 import { 
   Restaurant,
@@ -55,6 +55,7 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -67,8 +68,8 @@ const Settings = () => {
   const [isInvitationLoading, setIsInvitationLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { 
-    data: restaurants = [], 
+  const {
+    data: restaurants = [],
     isLoading: isLoadingRestaurants,
     refetch: refetchRestaurants 
   } = useQuery({
@@ -98,6 +99,15 @@ const Settings = () => {
   } = useQuery({
     queryKey: ['restaurant-admin', selectedRestaurantId],
     queryFn: () => selectedRestaurantId ? isRestaurantAdmin(selectedRestaurantId) : Promise.resolve(false),
+    enabled: !!selectedRestaurantId
+  });
+
+  const {
+    data: pendingInvitations = [],
+    isLoading: isLoadingPendingInvitations,
+  } = useQuery({
+    queryKey: ['pending-invitations', selectedRestaurantId],
+    queryFn: () => selectedRestaurantId ? getPendingInvitations(selectedRestaurantId) : Promise.resolve([]),
     enabled: !!selectedRestaurantId
   });
 
@@ -576,6 +586,32 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <div className="mt-6">
+          <h3 className="font-medium mb-4">Pending Team Members</h3>
+          {isLoadingPendingInvitations ? (
+            <div className="text-center py-4">Loading pending invitations...</div>
+          ) : !pendingInvitations || pendingInvitations.length === 0 ? (
+            <div className="text-center py-6 border rounded-md">
+              <p className="text-muted-foreground">No pending invitations</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pendingInvitations.map((invitation) => (
+                <div key={invitation.id} className="flex justify-between items-center p-3 border rounded-md bg-muted/30">
+                  <div>
+                    <h4 className="font-medium">{invitation.email}</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Invited as <span className="capitalize">{invitation.role}</span> •{' '}
+                      Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">Pending</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

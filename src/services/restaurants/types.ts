@@ -1,4 +1,3 @@
-
 export type Restaurant = {
   id: string;
   name: string;
@@ -16,4 +15,16 @@ export type RestaurantMember = {
   user?: {
     email: string;
   };
+};
+
+export type RestaurantInvitation = {
+  id: string;
+  restaurant_id: string;
+  email: string;
+  role: 'admin' | 'staff';
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+  invitation_token: string;
+  created_by: string;
 };

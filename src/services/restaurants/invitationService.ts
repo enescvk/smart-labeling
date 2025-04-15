@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Add a new function to create and send restaurant invitation
@@ -126,6 +125,27 @@ export const acceptRestaurantInvitation = async (
     console.log('Invitation accepted successfully');
   } catch (error) {
     console.error("Error accepting invitation:", error);
+    throw error;
+  }
+};
+
+export const getPendingInvitations = async (restaurantId: string) => {
+  try {
+    const { data: invitations, error } = await supabase
+      .from('restaurant_invitations')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .is('accepted_at', null)
+      .gt('expires_at', new Date().toISOString());
+      
+    if (error) {
+      console.error("Error fetching pending invitations:", error);
+      throw error;
+    }
+
+    return invitations || [];
+  } catch (error) {
+    console.error("Error in getPendingInvitations:", error);
     throw error;
   }
 };
