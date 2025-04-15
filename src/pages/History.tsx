@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
@@ -7,15 +8,20 @@ import { Search, Barcode, Calendar, Clock, User, CheckCircle2, XCircle } from "l
 import { motion } from "framer-motion";
 import { getInventoryItems, InventoryItem } from "../services/inventory";
 import { useQuery } from "@tanstack/react-query";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const History: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
   
+  const { selectedRestaurant } = useRestaurantStore();
+  const restaurantId = selectedRestaurant?.id;
+  
   const { data: inventoryItems, isLoading, error } = useQuery({
-    queryKey: ['inventoryItems'],
-    queryFn: getInventoryItems
+    queryKey: ['inventoryItems', restaurantId],
+    queryFn: () => getInventoryItems(restaurantId),
+    enabled: !!restaurantId
   });
   
   useEffect(() => {

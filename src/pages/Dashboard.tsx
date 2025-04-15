@@ -13,27 +13,35 @@ import { DashboardView } from "../components/DashboardView";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, ChartPieIcon, LineChart, LayoutDashboard } from "lucide-react";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const Dashboard: React.FC = () => {
+  const { selectedRestaurant } = useRestaurantStore();
+  const restaurantId = selectedRestaurant?.id;
+  
   // Fetch all data needed for dashboard
   const { data: activeItems = [], isLoading: activeLoading } = useQuery({
-    queryKey: ['inventoryItems', 'active'],
-    queryFn: getActiveInventoryItems
+    queryKey: ['inventoryItems', 'active', restaurantId],
+    queryFn: () => getActiveInventoryItems(restaurantId),
+    enabled: !!restaurantId
   });
 
   const { data: recentItems = [], isLoading: recentLoading } = useQuery({
-    queryKey: ['inventoryItems', 'recent'],
-    queryFn: getRecentItems
+    queryKey: ['inventoryItems', 'recent', restaurantId],
+    queryFn: () => getRecentItems(restaurantId),
+    enabled: !!restaurantId
   });
   
   const { data: expiringItems = [], isLoading: expiringLoading } = useQuery({
-    queryKey: ['inventoryItems', 'expiring'],
-    queryFn: getExpiringItems
+    queryKey: ['inventoryItems', 'expiring', restaurantId],
+    queryFn: () => getExpiringItems(restaurantId),
+    enabled: !!restaurantId
   });
   
   const { data: expiredItems = [], isLoading: expiredLoading } = useQuery({
-    queryKey: ['inventoryItems', 'expired'],
-    queryFn: getExpiredItems
+    queryKey: ['inventoryItems', 'expired', restaurantId],
+    queryFn: () => getExpiredItems(restaurantId),
+    enabled: !!restaurantId
   });
 
   const isLoading = activeLoading || recentLoading || expiringLoading || expiredLoading;
