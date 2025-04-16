@@ -1,7 +1,4 @@
-
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { ScanBarcode } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { getActiveInventoryItems } from "@/services/inventory/queries";
@@ -19,12 +16,7 @@ export const InventoryHeader: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
-          <Button variant="ghost" size="sm" className="p-1">
-            <ScanBarcode className="h-5 w-5" />
-          </Button>
-        </div>
+        <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
       </div>
       
       {isLoading ? (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, Home, Plus, BarChart3, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard, Settings as SettingsIcon, Store } from "lucide-react";
+import { Menu, X, Home, Plus, Search, History as HistoryIcon, LogOut, User, LogIn, LayoutDashboard, Settings as SettingsIcon, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
     {
       href: "/scan",
       label: "Scan Barcode",
-      icon: BarChart3,
+      icon: Search,
       active: location.pathname === "/scan",
     },
     {
