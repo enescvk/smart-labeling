@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Barcode, Camera, Check, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { getItemById } from "../services/inventory"; // Fixed import path
+import { useRestaurantStore } from "../stores/restaurantStore";
 
 interface BarcodeScannerProps {
   onItemFound: (barcode: string) => void;
@@ -18,6 +19,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const { selectedRestaurantId } = useRestaurantStore();
   
   const handleManualSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +31,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
     setIsSearching(true);
     
     try {
-      // Query the actual database for the barcode
-      const item = await getItemById(barcodeInput);
+      // Query the actual database for the barcode with the restaurant ID
+      const item = await getItemById(barcodeInput, selectedRestaurantId);
       
       if (item) {
         toast.success("Barcode found!");

@@ -10,12 +10,14 @@ import { motion } from "framer-motion";
 import { getItemById, updateItemStatus, InventoryItem } from "../services/inventory";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { printBarcode } from "../utils/barcodeGenerator";
+import { useRestaurantStore } from "../stores/restaurantStore";
 
 const ScanBarcode: React.FC = () => {
   const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const queryClient = useQueryClient();
+  const { selectedRestaurantId } = useRestaurantStore();
   
   const updateStatusMutation = useMutation({
     mutationFn: (id: string) => updateItemStatus(id, "used"),
@@ -27,7 +29,7 @@ const ScanBarcode: React.FC = () => {
   const handleBarcodeFound = async (barcode: string) => {
     setIsLoading(true);
     try {
-      const item = await getItemById(barcode);
+      const item = await getItemById(barcode, selectedRestaurantId);
       setFoundItem(item);
       if (!item) {
         toast.error("Item not found", {
