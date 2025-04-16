@@ -223,12 +223,20 @@ export const RestaurantsTab = () => {
                 ) : (
                   <>
                     <div className="flex items-center gap-4 flex-grow">
-                      <div>
-                        <h3 className="font-medium">{restaurant.name}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          Created on {new Date(restaurant.created_at).toLocaleDateString()}
-                        </p>
+                      <div className="flex items-center">
+                        <h3 className="font-medium mr-2">{restaurant.name}</h3>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => startEditingRestaurant(restaurant)}
+                          className="p-1 h-auto w-auto"
+                        >
+                          <Edit className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Created on {new Date(restaurant.created_at).toLocaleDateString()}
+                      </p>
                       {selectedRestaurant?.id === restaurant.id && (
                         <span className="text-sm text-green-600 flex items-center gap-1">
                           <Check className="h-4 w-4" /> Selected
@@ -267,14 +275,6 @@ export const RestaurantsTab = () => {
                         disabled={selectedRestaurant?.id === restaurant.id}
                       >
                         {selectedRestaurant?.id === restaurant.id ? "Selected" : "Select"}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => startEditingRestaurant(restaurant)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
                       </Button>
                     </div>
                   </>
