@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { 
   Card, 
@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Edit, Plus, Check } from "lucide-react";
+import { Edit, Plus, Check, Star } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createRestaurant, getUserRestaurants, updateRestaurant } from "@/services/restaurants/restaurantService";
 import type { Restaurant } from "@/services/restaurants/types";
@@ -30,8 +30,9 @@ export const RestaurantsTab = () => {
   const [newRestaurantName, setNewRestaurantName] = useState("");
   const [editRestaurantName, setEditRestaurantName] = useState("");
   const [editingRestaurantId, setEditingRestaurantId] = useState<string | null>(null);
+  const [defaultRestaurantId, setDefaultRestaurantId] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
+  const { selectedRestaurant, setSelectedRestaurant, setDefaultRestaurant, getDefaultRestaurant } = useRestaurantStore();
 
   const {
     data: restaurants = [],
@@ -40,6 +41,15 @@ export const RestaurantsTab = () => {
     queryKey: ['restaurants'],
     queryFn: getUserRestaurants
   });
+
+  // Load the default restaurant ID when component mounts
+  useEffect(() => {
+    const loadDefaultRestaurant = async () => {
+      const id = await getDefaultRestaurant();
+      setDefaultRestaurantId(id);
+    };
+    loadDefaultRestaurant();
+  }, [getDefaultRestaurant]);
 
   const createRestaurantMutation = useMutation({
     mutationFn: (name: string) => createRestaurant(name),
@@ -120,6 +130,23 @@ export const RestaurantsTab = () => {
   const cancelEditingRestaurant = () => {
     setEditingRestaurantId(null);
     setEditRestaurantName("");
+  };
+
+  const handleSetDefaultRestaurant = async (restaurantId: string) => {
+    try {
+      await setDefaultRestaurant(restaurantId);
+      setDefaultRestaurantId(restaurantId);
+      toast({
+        title: "Default restaurant set",
+        description: "This restaurant will be selected by default when you sign in.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error setting default restaurant",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -207,8 +234,32 @@ export const RestaurantsTab = () => {
                           <Check className="h-4 w-4" /> Selected
                         </span>
                       )}
+                      {defaultRestaurantId === restaurant.id && (
+                        <span className="text-sm text-amber-500 flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-amber-500" /> Default
+                        </span>
+                      )}
                     </div>
                     <div className="flex gap-2">
+                      <Button 
+                        size="sm"
+                        variant={defaultRestaurantId === restaurant.id ? "secondary" : "outline"}
+                        onClick={() => handleSetDefaultRestaurant(restaurant.id)}
+                        disabled={defaultRestaurantId === restaurant.id}
+                        className={defaultRestaurantId === restaurant.id ? "bg-amber-100 hover:bg-amber-200" : ""}
+                      >
+                        {defaultRestaurantId === restaurant.id ? (
+                          <>
+                            <Star className="h-4 w-4 mr-1 fill-amber-500" />
+                            Default
+                          </>
+                        ) : (
+                          <>
+                            <Star className="h-4 w-4 mr-1" />
+                            Set Default
+                          </>
+                        )}
+                      </Button>
                       <Button 
                         size="sm"
                         variant={selectedRestaurant?.id === restaurant.id ? "secondary" : "default"}
