@@ -1,8 +1,7 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { ScanBarcode } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { getActiveInventoryItems } from "@/services/inventory/queries";
@@ -20,20 +19,11 @@ export const InventoryHeader: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
-        <div className="flex space-x-2">
-          <Link to="/scan">
-            <Button variant="outline" size="sm">
-              <Search className="mr-1 h-4 w-4" />
-              Scan Barcode
-            </Button>
-          </Link>
-          <Link to="/labels/create">
-            <Button size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              New Item
-            </Button>
-          </Link>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
+          <Button variant="ghost" size="sm" className="p-1">
+            <ScanBarcode className="h-5 w-5" />
+          </Button>
         </div>
       </div>
       
@@ -53,14 +43,6 @@ export const InventoryHeader: React.FC = () => {
         <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg">
           <h3 className="text-lg font-medium text-kitchen-600">No inventory items found</h3>
           <p className="text-kitchen-500 mt-1">Create your first inventory item to get started</p>
-          <div className="mt-4">
-            <Link to="/labels/create">
-              <Button>
-                <Plus className="mr-1 h-4 w-4" />
-                Create Item
-              </Button>
-            </Link>
-          </div>
         </div>
       ) : (
         <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg">
