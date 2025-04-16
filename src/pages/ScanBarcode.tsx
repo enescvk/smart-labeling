@@ -17,7 +17,7 @@ const ScanBarcode: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const queryClient = useQueryClient();
-  const { selectedRestaurantId } = useRestaurantStore();
+  const { selectedRestaurant } = useRestaurantStore();
   
   const updateStatusMutation = useMutation({
     mutationFn: (id: string) => updateItemStatus(id, "used"),
@@ -29,7 +29,13 @@ const ScanBarcode: React.FC = () => {
   const handleBarcodeFound = async (barcode: string) => {
     setIsLoading(true);
     try {
-      const item = await getItemById(barcode, selectedRestaurantId);
+      if (!selectedRestaurant) {
+        toast.error("No restaurant selected");
+        setIsLoading(false);
+        return;
+      }
+      
+      const item = await getItemById(barcode, selectedRestaurant.id);
       setFoundItem(item);
       if (!item) {
         toast.error("Item not found", {

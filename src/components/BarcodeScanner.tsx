@@ -19,7 +19,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const { selectedRestaurantId } = useRestaurantStore();
+  const { selectedRestaurant } = useRestaurantStore();
   
   const handleManualSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,11 +28,16 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onItemFound }) =
       return;
     }
     
+    if (!selectedRestaurant) {
+      toast.error("No restaurant selected");
+      return;
+    }
+    
     setIsSearching(true);
     
     try {
       // Query the actual database for the barcode with the restaurant ID
-      const item = await getItemById(barcodeInput, selectedRestaurantId);
+      const item = await getItemById(barcodeInput, selectedRestaurant.id);
       
       if (item) {
         toast.success("Barcode found!");
