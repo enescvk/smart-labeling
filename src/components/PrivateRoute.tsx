@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
-import { getCurrentRestaurantId, createRestaurant, getUserRestaurants } from "@/services/restaurants"; 
+import { createRestaurant, getUserRestaurants } from "@/services/restaurants"; 
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 interface PrivateRouteProps {
   requiresRestaurant: boolean;
@@ -19,6 +19,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const [isCheckingRestaurant, setIsCheckingRestaurant] = useState(true);
   const [hasRestaurant, setHasRestaurant] = useState(false);
   const location = useLocation();
+  const { selectedRestaurant, loadFirstRestaurant } = useRestaurantStore();
 
   useEffect(() => {
     const checkUserRestaurant = async () => {
@@ -44,6 +45,11 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
             }
           } else {
             setHasRestaurant(restaurants.length > 0);
+            
+            // Auto-select the first restaurant if none is selected
+            if (restaurants.length > 0 && !selectedRestaurant) {
+              await loadFirstRestaurant();
+            }
           }
         }
         setIsCheckingRestaurant(false);
@@ -58,7 +64,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     } else if (!isLoading && !user) {
       setIsCheckingRestaurant(false);
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, selectedRestaurant, loadFirstRestaurant]);
 
   // Show loading spinner while checking auth or restaurant status
   if (isLoading || (user && isCheckingRestaurant)) {
