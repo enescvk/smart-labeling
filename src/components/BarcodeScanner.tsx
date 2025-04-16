@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Barcode, Camera, Check, Search } from "lucide-react";
 import { motion } from "framer-motion";
-import { getItemById } from "../services/inventoryService";
+import { getItemById } from "../services/inventory"; // Fixed import path
 
 interface BarcodeScannerProps {
   onItemFound: (barcode: string) => void;
