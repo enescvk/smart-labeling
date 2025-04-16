@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -9,13 +9,11 @@ import {
   getExpiredItems,
 } from "../services/inventoryService";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { InventoryHeader } from "@/components/dashboard/InventoryHeader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 
 const Index: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("overview");
   const { selectedRestaurant } = useRestaurantStore();
   
   const { 
@@ -74,18 +72,9 @@ const Index: React.FC = () => {
         />
         
         <InventoryHeader />
-        
-        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-            <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
-            <TabsTrigger value="expired">Expired</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
     </Layout>
   );
 };
 
 export default Index;
-
