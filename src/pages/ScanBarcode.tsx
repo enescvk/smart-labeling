@@ -1,17 +1,20 @@
+
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 import { InventoryCard } from "../components/InventoryCard";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { CheckCircle2, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { getItemById, updateItemStatus, InventoryItem } from "../services/inventory";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { printBarcode } from "../utils/barcodeGenerator";
 
 const ScanBarcode: React.FC = () => {
   const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const queryClient = useQueryClient();
   
   const updateStatusMutation = useMutation({
@@ -57,6 +60,30 @@ const ScanBarcode: React.FC = () => {
         });
       }
     });
+  };
+
+  const handlePrintLabel = async () => {
+    if (!foundItem) return;
+    
+    setIsPrinting(true);
+    
+    try {
+      await printBarcode(foundItem.id, {
+        product: foundItem.product,
+        preparedBy: foundItem.preparedBy,
+        containerType: foundItem.containerType,
+        preparedDate: foundItem.preparedDate,
+        expiryDate: foundItem.expiryDate
+      });
+      
+      toast.success("Label sent to printer");
+    } catch (error) {
+      toast.error("Failed to print label", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   return (
@@ -106,23 +133,33 @@ const ScanBarcode: React.FC = () => {
                 >
                   <InventoryCard item={foundItem} />
                   
-                  {foundItem.status === "active" && (
-                    <motion.div 
-                      className="mt-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
+                  <motion.div 
+                    className="mt-4 grid grid-cols-2 gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <Button
+                      onClick={handlePrintLabel}
+                      variant="outline"
+                      disabled={isPrinting}
+                      className="flex items-center justify-center"
                     >
+                      <Printer className="mr-2 h-4 w-4" />
+                      {isPrinting ? "Printing..." : "Print Label"}
+                    </Button>
+                    
+                    {foundItem.status === "active" && (
                       <Button
                         onClick={handleMarkAsUsed}
-                        className="w-full"
+                        className="flex items-center justify-center"
                         disabled={updateStatusMutation.isPending}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                         {updateStatusMutation.isPending ? "Updating..." : "Mark as Used"}
                       </Button>
-                    </motion.div>
-                  )}
+                    )}
+                  </motion.div>
                 </motion.div>
               ) : (
                 <div className="kitchen-card flex flex-col items-center justify-center p-12 text-kitchen-400">
