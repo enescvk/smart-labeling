@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { useQuery } from "@tanstack/react-query";
 import { getUserRestaurants } from "@/services/restaurants";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
