@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import PasswordReset from "./pages/PasswordReset";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import { useEffect } from "react";
 import { testSupabaseConnection } from "./lib/supabase";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,8 +70,8 @@ function App() {
                     <Dashboard />
                   </PrivateRoute>
                 } />
-                <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-                <Route path="/admin" element={<PrivateRoute><React.lazy(() => import('./pages/Admin')) /></PrivateRoute>} />
+                <Route path="/settings" element={<PrivateRoute requiresRestaurant={false}><Settings /></PrivateRoute>} />
+                <Route path="/admin" element={<PrivateRoute requiresRestaurant={true}><Admin /></PrivateRoute>} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />

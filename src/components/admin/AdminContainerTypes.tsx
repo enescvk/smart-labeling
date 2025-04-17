@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Save } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { getRestaurantSettings, updateContainerTypes } from "@/services/settings/restaurantSettings";
 
 export const AdminContainerTypes = () => {
   const { selectedRestaurant } = useRestaurantStore();
@@ -22,29 +22,13 @@ export const AdminContainerTypes = () => {
 
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('restaurant_settings')
-          .select('container_types')
-          .eq('restaurant_id', selectedRestaurant.id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching container types:", error);
-          // If no settings found, initialize with default values
-          if (error.code === 'PGRST116') {
-            setContainerTypes(['Container', 'Bottle', 'Jar', 'Bag', 'Box']);
-          } else {
-            toast({
-              title: "Error",
-              description: "Failed to load container types",
-              variant: "destructive",
-            });
-          }
-        } else if (data) {
-          setContainerTypes(data.container_types || []);
+        const settings = await getRestaurantSettings(selectedRestaurant.id);
+        if (settings) {
+          setContainerTypes(settings.container_types || []);
         }
       } catch (error) {
-        console.error("Error in fetchContainerTypes:", error);
+        console.error("Error fetching container types:", error);
+        toast.error("Failed to load container types");
       } finally {
         setIsLoading(false);
       }
@@ -61,11 +45,7 @@ export const AdminContainerTypes = () => {
     if (containerTypes.some(type => 
       type.toLowerCase() === newContainerType.trim().toLowerCase()
     )) {
-      toast({
-        title: "Already exists",
-        description: "This container type already exists",
-        variant: "destructive",
-      });
+      toast.error("This container type already exists");
       return;
     }
     
@@ -86,31 +66,11 @@ export const AdminContainerTypes = () => {
     
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('restaurant_settings')
-        .upsert({
-          restaurant_id: selectedRestaurant.id,
-          container_types: containerTypes,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'restaurant_id'
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Container types saved successfully",
-      });
+      await updateContainerTypes(selectedRestaurant.id, containerTypes);
+      toast.success("Container types saved successfully");
     } catch (error) {
       console.error("Error saving container types:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save container types",
-        variant: "destructive",
-      });
+      toast.error("Failed to save container types");
     } finally {
       setIsSaving(false);
     }
