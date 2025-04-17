@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { toast } from "sonner";
 import { Barcode, Printer, Save } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { motion } from "framer-motion";
+import { getRestaurantSettings } from "@/services/settings/restaurantSettings";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 export interface LabelFormData {
   product: string;
@@ -27,6 +30,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   onSubmit,
   isSubmitting = false
 }) => {
+  const { selectedRestaurant } = useRestaurantStore();
   const today = format(new Date(), "yyyy-MM-dd");
   const defaultExpiry = format(addDays(new Date(), 3), "yyyy-MM-dd");
   
@@ -40,6 +44,32 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   const [barcodeId, setBarcodeId] = useState<string>("");
   const [barcodeSvg, setBarcodeSvg] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [containerTypes, setContainerTypes] = useState<string[]>([
+    'Container', 'Bottle', 'Jar', 'Bag', 'Box', 'Other'
+  ]);
+  
+  // Load container types from restaurant settings
+  useEffect(() => {
+    const loadContainerTypes = async () => {
+      if (!selectedRestaurant) return;
+      
+      try {
+        const settings = await getRestaurantSettings(selectedRestaurant.id);
+        if (settings && settings.container_types && settings.container_types.length > 0) {
+          setContainerTypes(settings.container_types);
+          
+          // If current containerType is not in the list, reset to first option
+          if (!settings.container_types.includes(formData.containerType)) {
+            setFormData(prev => ({ ...prev, containerType: settings.container_types[0] }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load container types:", error);
+      }
+    };
+    
+    loadContainerTypes();
+  }, [selectedRestaurant]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -164,12 +194,9 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
                 <SelectValue placeholder="Select container type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Container">Container</SelectItem>
-                <SelectItem value="Bottle">Bottle</SelectItem>
-                <SelectItem value="Jar">Jar</SelectItem>
-                <SelectItem value="Bag">Bag</SelectItem>
-                <SelectItem value="Box">Box</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                {containerTypes.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

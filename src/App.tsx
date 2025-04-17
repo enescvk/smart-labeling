@@ -28,7 +28,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+function App() {
   useEffect(() => {
     // Test Supabase connection on app startup
     testSupabaseConnection();
@@ -68,11 +68,8 @@ const App = () => {
                     <Dashboard />
                   </PrivateRoute>
                 } />
-                <Route path="/settings" element={
-                  <PrivateRoute requiresRestaurant={false}>
-                    <Settings />
-                  </PrivateRoute>
-                } />
+                <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+                <Route path="/admin" element={<PrivateRoute><React.lazy(() => import('./pages/Admin')) /></PrivateRoute>} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
@@ -84,6 +81,6 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;

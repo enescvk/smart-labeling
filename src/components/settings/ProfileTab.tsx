@@ -3,10 +3,39 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ProfileTab = () => {
   const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) return;
+      
+      try {
+        // Check if user is admin of any restaurant
+        const { data, error } = await supabase
+          .rpc('is_admin_of_restaurant', { 
+            p_restaurant_id: localStorage.getItem('selectedRestaurantId') 
+          });
+        
+        if (error) {
+          console.error("Error checking admin status:", error);
+          return;
+        }
+        
+        setIsAdmin(!!data);
+      } catch (error) {
+        console.error("Error in admin check:", error);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -47,6 +76,15 @@ export const ProfileTab = () => {
           <LogOut className="h-4 w-4 mr-2" />
           Sign Out
         </Button>
+        
+        {isAdmin && (
+          <Button asChild>
+            <Link to="/admin">
+              <Settings className="h-4 w-4 mr-2" />
+              Admin Panel
+            </Link>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
