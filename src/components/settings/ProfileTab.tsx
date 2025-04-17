@@ -7,20 +7,22 @@ import { LogOut, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 export const ProfileTab = () => {
   const { user, signOut } = useAuth();
+  const { selectedRestaurant } = useRestaurantStore();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!user) return;
+      if (!user || !selectedRestaurant) return;
       
       try {
-        // Check if user is admin of any restaurant
+        // Check if user is admin of the selected restaurant
         const { data, error } = await supabase
           .rpc('is_admin_of_restaurant', { 
-            p_restaurant_id: localStorage.getItem('selectedRestaurantId') 
+            p_restaurant_id: selectedRestaurant.id 
           });
         
         if (error) {
@@ -29,13 +31,14 @@ export const ProfileTab = () => {
         }
         
         setIsAdmin(!!data);
+        console.log("Is admin of selected restaurant:", data);
       } catch (error) {
         console.error("Error in admin check:", error);
       }
     };
 
     checkAdminStatus();
-  }, [user]);
+  }, [user, selectedRestaurant]);
 
   const handleSignOut = async () => {
     try {
@@ -77,7 +80,7 @@ export const ProfileTab = () => {
           Sign Out
         </Button>
         
-        {isAdmin && (
+        {isAdmin && selectedRestaurant && (
           <Button asChild>
             <Link to="/admin">
               <Settings className="h-4 w-4 mr-2" />

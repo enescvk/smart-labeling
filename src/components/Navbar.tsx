@@ -23,6 +23,31 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { selectedRestaurant } = useRestaurantStore();
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user || !selectedRestaurant) return;
+      
+      try {
+        const { data, error } = await supabase
+          .rpc('is_admin_of_restaurant', { 
+            p_restaurant_id: selectedRestaurant.id 
+          });
+        
+        if (error) {
+          console.error("Error checking admin status:", error);
+          return;
+        }
+        
+        setIsAdmin(!!data);
+      } catch (error) {
+        console.error("Error in admin check:", error);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user, selectedRestaurant]);
 
   const routes = [
     {
@@ -119,6 +144,14 @@ export const Navbar: React.FC = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {isAdmin && selectedRestaurant && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">
+                        <SettingsIcon className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to="/settings">
                       <SettingsIcon className="mr-2 h-4 w-4" />
