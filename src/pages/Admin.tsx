@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Restaurant, Package } from "lucide-react";
+import { Building, Package } from "lucide-react";  // Replaced 'Restaurant' with 'Building'
 import { AdminContainerTypes } from "@/components/admin/AdminContainerTypes";
 import { useAuth } from "@/context/AuthContext";
 import { useRestaurantStore } from "@/stores/restaurantStore";
@@ -81,7 +81,7 @@ const Admin = () => {
               Container Types
             </TabsTrigger>
             <TabsTrigger value="restaurant-settings">
-              <Restaurant className="h-4 w-4 mr-2" />
+              <Building className="h-4 w-4 mr-2" />  {/* Changed from 'Restaurant' to 'Building' */}
               Restaurant Settings
             </TabsTrigger>
           </TabsList>
