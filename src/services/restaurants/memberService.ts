@@ -31,6 +31,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
     console.log("Fetching members for restaurant:", restaurantId);
     
     // Get all members for this restaurant directly from the database
+    // Fix: modified the join approach to ensure correct type safety
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`
@@ -40,8 +41,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         role,
         created_at,
         updated_at,
-        profiles:user_id (
-          email:username
+        profiles (
+          username
         )
       `)
       .eq('restaurant_id', restaurantId);
@@ -60,7 +61,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       created_at: member.created_at,
       updated_at: member.updated_at,
       user: {
-        email: member.profiles?.email || 'Unknown Email'
+        email: member.profiles?.username || 'Unknown Email'
       }
     }));
     
