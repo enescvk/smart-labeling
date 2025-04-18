@@ -28,50 +28,44 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
 // Get all members of a restaurant
 export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
   try {
-    // First get current user's email and ID
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error("No authenticated user found:", userError);
-      throw new Error("No authenticated user found");
+    console.log("Fetching members for restaurant:", restaurantId);
+    
+    // Get all members for this restaurant directly from the database
+    const { data: members, error } = await supabase
+      .from('restaurant_members')
+      .select(`
+        id,
+        user_id,
+        restaurant_id,
+        role,
+        created_at,
+        updated_at,
+        profiles:user_id (
+          email:username
+        )
+      `)
+      .eq('restaurant_id', restaurantId);
+    
+    if (error) {
+      console.error("Error fetching restaurant members:", error);
+      throw error;
     }
     
-    console.log("Current user:", user.id, user.email);
-    
-    // Use a more direct approach: create a manual array with the current user's info
-    let currentUserMember: RestaurantMember | null = null;
-    
-    // Check if current user is a restaurant admin
-    const { data: isAdmin, error: adminCheckError } = await supabase
-      .rpc('is_admin_of_restaurant', { p_restaurant_id: restaurantId });
-    
-    if (adminCheckError) {
-      console.error("Error checking admin status:", adminCheckError);
-    } else {
-      console.log("Is current user an admin?", isAdmin);
-      
-      // If we can determine the user is an admin, add them to the members list
-      if (isAdmin) {
-        currentUserMember = {
-          id: 'current-user',
-          user_id: user.id,
-          restaurant_id: restaurantId,
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          user: {
-            email: user.email || 'Unknown Email'
-          }
-        };
+    // Map the results to match our RestaurantMember type
+    const formattedMembers: RestaurantMember[] = members.map(member => ({
+      id: member.id,
+      user_id: member.user_id,
+      restaurant_id: member.restaurant_id,
+      role: member.role as 'admin' | 'staff',
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      user: {
+        email: member.profiles?.email || 'Unknown Email'
       }
-    }
+    }));
     
-    const members: RestaurantMember[] = [];
-    if (currentUserMember) {
-      members.push(currentUserMember);
-    }
-    
-    console.log("Using current user as member:", members);
-    return members;
+    console.log("Fetched members:", formattedMembers);
+    return formattedMembers;
   } catch (error) {
     console.error("Error in getRestaurantMembers:", error);
     throw error;
