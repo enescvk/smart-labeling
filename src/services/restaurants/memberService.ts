@@ -30,8 +30,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
     
-    // Get all members for this restaurant directly from the database
-    // Fix: modified the join approach to ensure correct type safety
+    // First, get all member IDs for this restaurant
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`
@@ -40,10 +39,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         restaurant_id,
         role,
         created_at,
-        updated_at,
-        profiles (
-          username
-        )
+        updated_at
       `)
       .eq('restaurant_id', restaurantId);
     
@@ -52,18 +48,29 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       throw error;
     }
     
-    // Map the results to match our RestaurantMember type
-    const formattedMembers: RestaurantMember[] = members.map(member => ({
-      id: member.id,
-      user_id: member.user_id,
-      restaurant_id: member.restaurant_id,
-      role: member.role as 'admin' | 'staff',
-      created_at: member.created_at,
-      updated_at: member.updated_at,
-      user: {
-        email: member.profiles?.username || 'Unknown Email'
-      }
-    }));
+    // Now get the profile information for each member
+    const formattedMembers: RestaurantMember[] = [];
+    
+    for (const member of members) {
+      // Get the user profile for this member
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', member.user_id)
+        .single();
+      
+      formattedMembers.push({
+        id: member.id,
+        user_id: member.user_id,
+        restaurant_id: member.restaurant_id,
+        role: member.role as 'admin' | 'staff',
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+        user: {
+          email: profile?.username || 'Unknown Email'
+        }
+      });
+    }
     
     console.log("Fetched members:", formattedMembers);
     return formattedMembers;
