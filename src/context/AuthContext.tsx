@@ -91,8 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear any previous errors from localStorage
       localStorage.removeItem('supabase.auth.error');
       
+      // Properly sanitize email to ensure it's handled correctly
+      const sanitizedEmail = email.trim().toLowerCase();
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: sanitizedEmail,
         password,
       });
 
@@ -116,8 +119,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       console.log("Attempting to sign up with:", email);
       
+      // Clear any previous errors from localStorage
+      localStorage.removeItem('supabase.auth.error');
+      
+      // Properly sanitize email to ensure it's handled correctly
+      const sanitizedEmail = email.trim().toLowerCase();
+      
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: sanitizedEmail,
         password,
         options: {
           data: restaurantName ? {
