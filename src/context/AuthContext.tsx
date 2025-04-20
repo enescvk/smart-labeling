@@ -88,6 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       console.log("Attempting to sign in with:", email);
       
+      // Clear any previous errors from localStorage
+      localStorage.removeItem('supabase.auth.error');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
