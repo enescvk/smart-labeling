@@ -25,12 +25,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { loadFirstRestaurant } = useRestaurantStore();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
+        // Use setTimeout to avoid potential deadlocks
         if (event === 'SIGNED_IN') {
           setTimeout(() => {
             loadFirstRestaurant();
@@ -57,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get the initial session
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession }, error }) => {
       if (error) {
         console.error("Error getting session:", error);
@@ -97,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log("Sign in successful:", data);
+      return data;
     } catch (error) {
       console.error("Error signing in:", error);
       throw error;

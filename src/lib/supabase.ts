@@ -6,7 +6,7 @@ import type { Database } from '../integrations/supabase/types';
 const supabaseUrl = "https://htrstvloqgqvnvtiqfwa.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cnN0dmxvcWdxdm52dGlxZndhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NjU2ODcsImV4cCI6MjA1ODU0MTY4N30.R4cxC3z5aCUGYZIQWgMs2hoYrUHKYC3U89KXNbYmyHw";
 
-// Create the Supabase client with proper typing
+// Create the Supabase client with proper typing and explicit auth configuration
 export const supabase = createClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
@@ -14,7 +14,8 @@ export const supabase = createClient<Database>(
     auth: {
       storage: localStorage,
       persistSession: true,
-      autoRefreshToken: true
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
   }
 );
