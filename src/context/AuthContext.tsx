@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +13,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (newPassword: string) => Promise<void>;
+  removeUserData: (userId: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,14 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { loadFirstRestaurant } = useRestaurantStore();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Use setTimeout to avoid potential deadlocks
         if (event === 'SIGNED_IN') {
           setTimeout(() => {
             loadFirstRestaurant();
@@ -59,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession }, error }) => {
       if (error) {
         console.error("Error getting session:", error);
@@ -88,10 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       console.log("Attempting to sign in with:", email);
       
-      // Clear any previous errors from localStorage
       localStorage.removeItem('supabase.auth.error');
       
-      // Properly sanitize email to ensure it's handled correctly
       const sanitizedEmail = email.trim().toLowerCase();
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -119,10 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       console.log("Attempting to sign up with:", email);
       
-      // Clear any previous errors from localStorage
       localStorage.removeItem('supabase.auth.error');
       
-      // Properly sanitize email to ensure it's handled correctly
       const sanitizedEmail = email.trim().toLowerCase();
       
       const { data, error } = await supabase.auth.signUp({
@@ -184,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
-  
+
   const resetPassword = async (newPassword: string) => {
     try {
       setIsLoading(true);
@@ -206,6 +199,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const removeUserData = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      console.log("Attempting to remove user data for:", userId);
+      
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profilesError) {
+        console.error("Error removing user profile:", profilesError);
+        throw profilesError;
+      }
+      
+      const { error: membersError } = await supabase
+        .from('restaurant_members')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (membersError) {
+        console.error("Error removing user from restaurant members:", membersError);
+        throw membersError;
+      }
+      
+      toast({
+        title: "User data removed",
+        description: "The user's application data has been removed successfully",
+      });
+    } catch (error) {
+      console.error("Error removing user data:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const contextValue = React.useMemo(() => ({
     session,
     user,
@@ -214,7 +244,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     signInWithGoogle,
-    resetPassword
+    resetPassword,
+    removeUserData
   }), [session, user, isLoading]);
 
   return (
