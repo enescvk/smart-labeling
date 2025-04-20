@@ -26,6 +26,8 @@ import { createRestaurant, getCurrentRestaurantName } from "@/services/restauran
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Define the validation schema for login
 const loginSchema = z.object({
@@ -58,6 +60,7 @@ const Auth: React.FC = () => {
   const { signIn, signUp, signInWithGoogle, user, isLoading } = useAuth();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
   
   // Get the current restaurant name if any
@@ -66,6 +69,11 @@ const Auth: React.FC = () => {
     queryFn: getCurrentRestaurantName,
     enabled: false, // Don't fetch automatically, we'll do it manually after login
   });
+  
+  // Clear error when changing tabs
+  useEffect(() => {
+    setAuthError(null);
+  }, [activeTab]);
   
   // Initialize forms outside of any conditional returns
   const loginForm = useForm<LoginFormValues>({
@@ -96,15 +104,18 @@ const Auth: React.FC = () => {
   // Handle login form submission
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
+      setAuthError(null);
       await signIn(values.email, values.password);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      setAuthError(error.message || "Failed to sign in. Please try again.");
     }
   };
 
   // Handle signup form submission
   const onSignupSubmit = async (values: SignupFormValues) => {
     try {
+      setAuthError(null);
       setIsCreatingRestaurant(true);
       
       // Sign up the user with restaurant name in metadata
@@ -120,8 +131,9 @@ const Auth: React.FC = () => {
       });
       
       setActiveTab("login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error);
+      setAuthError(error.message || "Failed to create account. Please try again.");
     } finally {
       setIsCreatingRestaurant(false);
     }
@@ -130,6 +142,7 @@ const Auth: React.FC = () => {
   // Handle forgot password form submission
   const onForgotPasswordSubmit = async (values: ForgotPasswordFormValues) => {
     try {
+      setAuthError(null);
       setIsResettingPassword(true);
       
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
@@ -149,11 +162,7 @@ const Auth: React.FC = () => {
       setActiveTab("login");
     } catch (error: any) {
       console.error("Forgot password error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send reset password email",
-        variant: "destructive",
-      });
+      setAuthError(error.message || "Failed to send reset password email. Please try again.");
     } finally {
       setIsResettingPassword(false);
     }
@@ -184,6 +193,14 @@ const Auth: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
+          {authError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="login">Login</TabsTrigger>

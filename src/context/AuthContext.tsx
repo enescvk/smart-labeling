@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
@@ -56,13 +57,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    // Get the initial session
+    supabase.auth.getSession().then(({ data: { session: currentSession }, error }) => {
+      if (error) {
+        console.error("Error getting session:", error);
+      }
+      
       console.log("Existing session:", currentSession);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        loadFirstRestaurant();
+        setTimeout(() => {
+          loadFirstRestaurant();
+        }, 0);
       }
       
       setIsLoading(false);
@@ -76,21 +84,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Attempting to sign in with:", email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        setTimeout(() => {
-          toast({
-            title: "Error signing in",
-            description: error.message,
-            variant: "destructive",
-          });
-        }, 0);
+        console.error("Sign in error:", error);
         throw error;
       }
+      
+      console.log("Sign in successful:", data);
     } catch (error) {
       console.error("Error signing in:", error);
       throw error;
@@ -102,7 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, restaurantName?: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signUp({
+      console.log("Attempting to sign up with:", email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -113,22 +121,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        setTimeout(() => {
-          toast({
-            title: "Error signing up",
-            description: error.message,
-            variant: "destructive",
-          });
-        }, 0);
+        console.error("Sign up error:", error);
         throw error;
-      } else {
-        setTimeout(() => {
-          toast({
-            title: "Sign up successful",
-            description: "Please check your email for the confirmation link.",
-          });
-        }, 0);
       }
+      
+      console.log("Sign up successful:", data);
     } catch (error) {
       console.error("Error signing up:", error);
       throw error;
@@ -142,13 +139,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
-        setTimeout(() => {
-          toast({
-            title: "Error signing out",
-            description: error.message,
-            variant: "destructive",
-          });
-        }, 0);
         throw error;
       }
     } catch (error) {
@@ -170,13 +160,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        setTimeout(() => {
-          toast({
-            title: "Error signing in with Google",
-            description: error.message,
-            variant: "destructive",
-          });
-        }, 0);
         throw error;
       }
     } catch (error) {
@@ -193,21 +176,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       
       if (error) {
-        setTimeout(() => {
-          toast({
-            title: "Error resetting password",
-            description: error.message,
-            variant: "destructive",
-          });
-        }, 0);
         throw error;
       } else {
-        setTimeout(() => {
-          toast({
-            title: "Password updated successfully",
-            description: "Your password has been reset.",
-          });
-        }, 0);
+        toast({
+          title: "Password updated successfully",
+          description: "Your password has been reset.",
+        });
       }
     } catch (error) {
       console.error("Error resetting password:", error);
