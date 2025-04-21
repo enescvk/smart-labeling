@@ -1,17 +1,19 @@
+
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { getActiveInventoryItems } from "@/services/inventory/queries";
 import { InventoryCard } from "@/components/InventoryCard";
+import { InventoryItem } from "@/services/inventory/types";
 
-export const InventoryHeader: React.FC = () => {
+interface InventoryHeaderProps {
+  items: InventoryItem[];
+}
+
+export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items }) => {
   const { selectedRestaurant } = useRestaurantStore();
   
-  const { data: inventoryItems = [], isLoading } = useQuery({
-    queryKey: ['inventoryItems', 'active', selectedRestaurant?.id],
-    queryFn: () => getActiveInventoryItems(selectedRestaurant?.id),
-    enabled: !!selectedRestaurant?.id
-  });
+  const isLoading = false; // Since items are now provided via props, there's no loading state
 
   return (
     <div className="space-y-6">
@@ -25,9 +27,9 @@ export const InventoryHeader: React.FC = () => {
             <div key={i} className="h-56 animate-pulse bg-kitchen-100 rounded-lg"></div>
           ))}
         </div>
-      ) : inventoryItems.length > 0 ? (
+      ) : items.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {inventoryItems.map((item, index) => (
+          {items.map((item, index) => (
             <InventoryCard key={item.id} item={item} index={index} />
           ))}
         </div>
