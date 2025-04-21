@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Card, 
   CardContent, 
@@ -31,8 +31,41 @@ export const RestaurantsTab = () => {
   const [editRestaurantName, setEditRestaurantName] = useState("");
   const [editingRestaurantId, setEditingRestaurantId] = useState<string | null>(null);
   const [defaultRestaurantId, setDefaultRestaurantId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const queryClient = useQueryClient();
   const { selectedRestaurant, setSelectedRestaurant, setDefaultRestaurant, getDefaultRestaurant } = useRestaurantStore();
+
+  useEffect(() => {
+    const loadDefaultRestaurant = async () => {
+      const id = await getDefaultRestaurant();
+      setDefaultRestaurantId(id);
+    };
+    loadDefaultRestaurant();
+  }, [getDefaultRestaurant]);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!selectedRestaurant) return;
+      
+      try {
+        const { data, error } = await supabase
+          .rpc('is_admin_of_restaurant', { 
+            p_restaurant_id: selectedRestaurant.id 
+          });
+        
+        if (error) {
+          console.error("Error checking admin status:", error);
+          return;
+        }
+        
+        setIsAdmin(!!data);
+      } catch (error) {
+        console.error("Error in admin check:", error);
+      }
+    };
+
+    checkAdminStatus();
+  }, [selectedRestaurant]);
 
   const {
     data: restaurants = [],
@@ -41,15 +74,6 @@ export const RestaurantsTab = () => {
     queryKey: ['restaurants'],
     queryFn: getUserRestaurants
   });
-
-  // Load the default restaurant ID when component mounts
-  useEffect(() => {
-    const loadDefaultRestaurant = async () => {
-      const id = await getDefaultRestaurant();
-      setDefaultRestaurantId(id);
-    };
-    loadDefaultRestaurant();
-  }, [getDefaultRestaurant]);
 
   const createRestaurantMutation = useMutation({
     mutationFn: (name: string) => createRestaurant(name),
@@ -154,41 +178,43 @@ export const RestaurantsTab = () => {
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>My Restaurants</span>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                New Restaurant
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create a New Restaurant</DialogTitle>
-                <DialogDescription>
-                  Add a new restaurant to manage inventory for.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Restaurant Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Enter restaurant name"
-                    value={newRestaurantName}
-                    onChange={(e) => setNewRestaurantName(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  onClick={handleCreateRestaurant}
-                  disabled={createRestaurantMutation.isPending}
-                >
-                  {createRestaurantMutation.isPending ? "Creating..." : "Create Restaurant"}
+          {isAdmin && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Restaurant
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create a New Restaurant</DialogTitle>
+                  <DialogDescription>
+                    Add a new restaurant to manage inventory for.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Restaurant Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Enter restaurant name"
+                      value={newRestaurantName}
+                      onChange={(e) => setNewRestaurantName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    onClick={handleCreateRestaurant}
+                    disabled={createRestaurantMutation.isPending}
+                  >
+                    {createRestaurantMutation.isPending ? "Creating..." : "Create Restaurant"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </CardTitle>
         <CardDescription>
           Manage restaurants you have access to

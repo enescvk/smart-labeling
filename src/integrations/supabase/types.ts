@@ -226,6 +226,10 @@ export type Database = {
         Args: { restaurant_name: string }
         Returns: string
       }
+      create_staff_user_for_restaurant: {
+        Args: { p_email: string; p_restaurant_name: string }
+        Returns: string
+      }
       get_member_restaurants: {
         Args: { p_user_id?: string }
         Returns: string[]
