@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -13,8 +13,11 @@ import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { InventoryHeader } from "@/components/dashboard/InventoryHeader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 
+type FilterType = 'all' | 'active' | 'expiring' | 'expired';
+
 const Index: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
+  const [currentFilter, setCurrentFilter] = useState<FilterType>('all');
   
   const { 
     data: activeItems = [], 
@@ -58,6 +61,23 @@ const Index: React.FC = () => {
   const usedItemsCount = 0;
   const totalItems = activeItemsCount + usedItemsCount;
 
+  const getFilteredItems = () => {
+    switch (currentFilter) {
+      case 'active':
+        return activeItems;
+      case 'expiring':
+        return expiringItems;
+      case 'expired':
+        return expiredItems;
+      default:
+        return [...activeItems, ...expiringItems, ...expiredItems];
+    }
+  };
+
+  const handleFilterChange = (filter: FilterType) => {
+    setCurrentFilter(filter);
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -69,9 +89,10 @@ const Index: React.FC = () => {
           expiringItemsCount={expiringItems.length}
           expiredItemsCount={expiredItems.length}
           isLoading={isLoading}
+          onFilterChange={handleFilterChange}
         />
         
-        <InventoryHeader />
+        <InventoryHeader items={getFilteredItems()} />
       </div>
     </Layout>
   );

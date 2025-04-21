@@ -10,9 +10,10 @@ interface StatsCardProps {
   icon: LucideIcon;
   color: string;
   index: number;
+  onClick: () => void;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, color, index }) => {
+export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, color, index, onClick }) => {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
@@ -20,7 +21,10 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
 
   return (
     <motion.div variants={itemVariants}>
-      <Card className="relative overflow-hidden">
+      <Card 
+        className="relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+        onClick={onClick}
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-kitchen-400 text-sm font-medium">{title}</CardTitle>
         </CardHeader>
@@ -35,4 +39,3 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
     </motion.div>
   );
 };
-
