@@ -45,7 +45,15 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         </CardContent>
         <div 
           className={`absolute bottom-0 left-0 right-0 h-1 transition-opacity duration-200 ${
-            isSelected ? color.replace('text-', 'bg-').replace('/60', '') : 'opacity-0'
+            isSelected 
+              ? (
+                title === "Total Items" ? 'bg-green-500' :
+                title === "Active Items" ? 'bg-blue-500' :
+                title === "Items Expiring Soon" ? 'bg-orange-500' :
+                title === "Expired Items" ? 'bg-red-500' : 
+                'opacity-0'
+              )
+              : 'opacity-0'
           }`}
         />
       </Card>
