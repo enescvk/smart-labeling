@@ -11,9 +11,18 @@ interface StatsCardProps {
   color: string;
   index: number;
   onClick: () => void;
+  isSelected?: boolean;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, color, index, onClick }) => {
+export const StatsCard: React.FC<StatsCardProps> = ({ 
+  title, 
+  value, 
+  icon: Icon, 
+  color, 
+  index, 
+  onClick,
+  isSelected = false 
+}) => {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
@@ -34,7 +43,11 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
             <Icon className={`h-8 w-8 ${color}`} />
           </div>
         </CardContent>
-        <div className={`absolute bottom-0 left-0 right-0 h-1 ${color.replace('text-', 'bg-').replace('/60', '')}`}></div>
+        <div 
+          className={`absolute bottom-0 left-0 right-0 h-1 transition-opacity duration-200 ${
+            isSelected ? color.replace('text-', 'bg-').replace('/60', '') : 'opacity-0'
+          }`}
+        />
       </Card>
     </motion.div>
   );

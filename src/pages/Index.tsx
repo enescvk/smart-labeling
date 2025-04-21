@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +16,7 @@ type FilterType = 'all' | 'active' | 'expiring' | 'expired';
 
 const Index: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
-  const [currentFilter, setCurrentFilter] = useState<FilterType>('all');
+  const [currentFilter, setCurrentFilter] = useState<FilterType>('active');
   
   const { 
     data: activeItems = [], 
@@ -90,6 +89,7 @@ const Index: React.FC = () => {
           expiredItemsCount={expiredItems.length}
           isLoading={isLoading}
           onFilterChange={handleFilterChange}
+          currentFilter={currentFilter}
         />
         
         <InventoryHeader items={getFilteredItems()} />

@@ -12,6 +12,7 @@ interface StatsGridProps {
   expiredItemsCount: number;
   isLoading: boolean;
   onFilterChange: (filter: 'all' | 'active' | 'expiring' | 'expired') => void;
+  currentFilter: 'all' | 'active' | 'expiring' | 'expired';
 }
 
 export const StatsGrid: React.FC<StatsGridProps> = ({
@@ -21,6 +22,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
   expiredItemsCount,
   isLoading,
   onFilterChange,
+  currentFilter,
 }) => {
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -51,28 +53,28 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
       value: totalItems, 
       icon: ShoppingBag, 
       color: "text-kitchen-300",
-      onClick: () => onFilterChange('all')
+      filter: 'all' as const,
     },
     { 
       title: "Active Items", 
       value: activeItemsCount, 
       icon: Barcode, 
       color: "text-primary/60",
-      onClick: () => onFilterChange('active')
+      filter: 'active' as const,
     },
     { 
       title: "Items Expiring Soon", 
       value: expiringItemsCount, 
       icon: Clock, 
       color: "text-orange-300",
-      onClick: () => onFilterChange('expiring')
+      filter: 'expiring' as const,
     },
     { 
       title: "Expired Items", 
       value: expiredItemsCount, 
       icon: AlertTriangle, 
       color: "text-red-300",
-      onClick: () => onFilterChange('expired')
+      filter: 'expired' as const,
     },
   ];
 
@@ -91,7 +93,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
           icon={stat.icon}
           color={stat.color}
           index={index}
-          onClick={stat.onClick}
+          onClick={() => onFilterChange(stat.filter)}
+          isSelected={currentFilter === stat.filter}
         />
       ))}
     </motion.div>
