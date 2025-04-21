@@ -50,6 +50,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
             
             // Auto-select the first restaurant if none is selected
             if (restaurants.length > 0 && !selectedRestaurant) {
+              console.log("Auto-selecting first restaurant in PrivateRoute");
               await loadFirstRestaurant();
             }
           }
@@ -86,7 +87,6 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     }
   }, [user, isLoading, selectedRestaurant, loadFirstRestaurant]);
 
-  // Show loading spinner while checking auth or restaurant status
   if (isLoading || (user && isCheckingRestaurant)) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -98,12 +98,10 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     );
   }
 
-  // If no user, redirect to login
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} />;
   }
 
-  // If requires restaurant but user has none, redirect to create restaurant page
   if (requiresRestaurant && !hasRestaurant) {
     toast.info("Restaurant Required", {
       description: "You need to create a restaurant first."
@@ -112,7 +110,6 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     return <Navigate to="/settings" />;
   }
 
-  // Otherwise render children
   return (
     <>
       {typeof children === "function" 

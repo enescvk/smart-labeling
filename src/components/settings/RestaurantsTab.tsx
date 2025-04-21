@@ -38,6 +38,7 @@ export const RestaurantsTab = () => {
   useEffect(() => {
     const loadDefaultRestaurant = async () => {
       const id = await getDefaultRestaurant();
+      console.log("Loaded default restaurant ID in RestaurantsTab:", id);
       setDefaultRestaurantId(id);
     };
     loadDefaultRestaurant();

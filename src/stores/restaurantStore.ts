@@ -17,23 +17,31 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
   setSelectedRestaurant: (restaurant) => set({ selectedRestaurant: restaurant }),
   loadFirstRestaurant: async () => {
     try {
-      // First try to get the default restaurant from local storage
-      const defaultRestaurantId = await get().getDefaultRestaurant();
-      
+      // Get the user's restaurants
       const restaurants = await getUserRestaurants();
+      
       if (restaurants && restaurants.length > 0) {
+        // First try to get the default restaurant from local storage
+        const defaultRestaurantId = await get().getDefaultRestaurant();
+        console.log("Default restaurant ID from storage:", defaultRestaurantId);
+        
         if (defaultRestaurantId) {
           // Find the default restaurant in the list
           const defaultRestaurant = restaurants.find(r => r.id === defaultRestaurantId);
           if (defaultRestaurant) {
+            console.log("Setting default restaurant:", defaultRestaurant.name);
             set({ selectedRestaurant: defaultRestaurant });
             return;
+          } else {
+            console.log("Default restaurant not found among user restaurants");
           }
         }
         
         // If no default restaurant or not found, use the first one
+        console.log("Using first restaurant as default:", restaurants[0].name);
         set({ selectedRestaurant: restaurants[0] });
-        return;
+      } else {
+        console.log("No restaurants found for user");
       }
     } catch (error) {
       console.error("Failed to load first restaurant:", error);
@@ -46,6 +54,7 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
       
       // Store the default restaurant preference in local storage
       localStorage.setItem(`default_restaurant_${user.id}`, restaurantId);
+      console.log("Default restaurant saved:", restaurantId);
       return;
     } catch (error) {
       console.error("Failed to set default restaurant:", error);
@@ -58,7 +67,8 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
       if (!user) return null;
       
       // Get the default restaurant from local storage
-      return localStorage.getItem(`default_restaurant_${user.id}`);
+      const defaultId = localStorage.getItem(`default_restaurant_${user.id}`);
+      return defaultId;
     } catch (error) {
       console.error("Failed to get default restaurant:", error);
       return null;

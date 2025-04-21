@@ -62,7 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        loadFirstRestaurant();
+        setTimeout(() => {
+          loadFirstRestaurant();
+        }, 0);
       }
       
       setIsLoading(false);
