@@ -5,10 +5,11 @@ import { createRestaurant, getUserRestaurants } from "@/services/restaurants";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PrivateRouteProps {
   requiresRestaurant: boolean;
-  children: React.ReactNode;
+  children: React.ReactNode | ((props: { isAdmin: boolean }) => React.ReactNode);
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ 
@@ -18,6 +19,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const { user, isLoading } = useAuth();
   const [isCheckingRestaurant, setIsCheckingRestaurant] = useState(true);
   const [hasRestaurant, setHasRestaurant] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const { selectedRestaurant, loadFirstRestaurant } = useRestaurantStore();
 
@@ -49,6 +51,24 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
             // Auto-select the first restaurant if none is selected
             if (restaurants.length > 0 && !selectedRestaurant) {
               await loadFirstRestaurant();
+            }
+          }
+
+          // Check admin status if there's a selected restaurant
+          if (selectedRestaurant) {
+            try {
+              const { data, error } = await supabase
+                .rpc('is_admin_of_restaurant', { 
+                  p_restaurant_id: selectedRestaurant.id 
+                });
+              
+              if (error) {
+                console.error("Error checking admin status:", error);
+              } else {
+                setIsAdmin(!!data);
+              }
+            } catch (error) {
+              console.error("Error in admin check:", error);
             }
           }
         }
@@ -93,7 +113,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   }
 
   // Otherwise render children
-  return <>{children}</>;
+  return (
+    <>
+      {typeof children === "function" 
+        ? children({ isAdmin }) 
+        : children}
+    </>
+  );
 };
 
 export default PrivateRoute;
