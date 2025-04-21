@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
@@ -67,7 +66,7 @@ function App() {
                 } />
                 <Route path="/dashboard" element={
                   <PrivateRoute requiresRestaurant={true}>
-                    <Dashboard />
+                    {({ isAdmin }) => isAdmin ? <Dashboard /> : <Navigate to="/" />}
                   </PrivateRoute>
                 } />
                 <Route path="/settings" element={<PrivateRoute requiresRestaurant={false}><Settings /></PrivateRoute>} />

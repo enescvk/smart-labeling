@@ -75,12 +75,12 @@ export const Navbar: React.FC = () => {
       icon: HistoryIcon,
       active: location.pathname === "/history",
     },
-    {
+    ...(isAdmin ? [{
       href: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
       active: location.pathname === "/dashboard",
-    },
+    }] : []),
   ];
 
   return (
