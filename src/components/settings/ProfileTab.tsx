@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -140,14 +139,6 @@ export const ProfileTab = () => {
             </Button>
           )}
         </div>
-        {isAdmin && selectedRestaurant && (
-          <Button asChild>
-            <Link to="/admin">
-              <Settings className="h-4 w-4 mr-2" />
-              Admin Panel
-            </Link>
-          </Button>
-        )}
       </CardFooter>
     </Card>
   );
