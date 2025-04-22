@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -206,7 +207,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem key="no-food-types" value="no-food-types" disabled>
                     No food types defined
                   </SelectItem>
                 )}
@@ -230,7 +231,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
                     <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem key="no-members" value="no-members" disabled>
                     No team members found
                   </SelectItem>
                 )}
