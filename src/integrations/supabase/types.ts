@@ -77,6 +77,38 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_food_types: {
+        Row: {
+          created_at: string
+          food_types: string[]
+          id: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          food_types?: string[]
+          id?: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          food_types?: string[]
+          id?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_food_types_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_invitations: {
         Row: {
           accepted_at: string | null
