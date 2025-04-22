@@ -10,6 +10,7 @@ import { Barcode, Printer, Save } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { motion } from "framer-motion";
 import { getRestaurantSettings } from "@/services/settings/restaurantSettings";
+import { getRestaurantFoodTypes } from "@/services/settings/restaurantFoodTypes";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
 export interface LabelFormData {
@@ -46,18 +47,18 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   const [containerTypes, setContainerTypes] = useState<string[]>([
     'Container', 'Bottle', 'Jar', 'Bag', 'Box', 'Other'
   ]);
+  const [foodTypes, setFoodTypes] = useState<string[]>([
+    'Main Course', 'Appetizer', 'Dessert', 'Beverage', 'Side Dish'
+  ]);
   
-  // Load container types from restaurant settings
   useEffect(() => {
-    const loadContainerTypes = async () => {
+    const loadData = async () => {
       if (!selectedRestaurant) return;
-      
+
       try {
         const settings = await getRestaurantSettings(selectedRestaurant.id);
         if (settings && settings.container_types && settings.container_types.length > 0) {
           setContainerTypes(settings.container_types);
-          
-          // If current containerType is not in the list, reset to first option
           if (!settings.container_types.includes(formData.containerType)) {
             setFormData(prev => ({ ...prev, containerType: settings.container_types[0] }));
           }
@@ -65,11 +66,23 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
       } catch (error) {
         console.error("Failed to load container types:", error);
       }
+
+      try {
+        const types = await getRestaurantFoodTypes(selectedRestaurant.id);
+        if (types && Array.isArray(types.food_types) && types.food_types.length > 0) {
+          setFoodTypes(types.food_types);
+          if (!types.food_types.includes(formData.product)) {
+            setFormData(prev => ({ ...prev, product: "" }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load food types:", error);
+      }
     };
-    
-    loadContainerTypes();
+
+    loadData();
   }, [selectedRestaurant]);
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -78,24 +91,25 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   const handleContainerTypeChange = (value: string) => {
     setFormData((prev) => ({ ...prev, containerType: value }));
   };
-  
+
+  const handleProductTypeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, product: value }));
+  };
+
   const generateLabel = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.product || !formData.preparedBy) {
       toast.error("Please fill all required fields");
       return;
     }
-    
+
     setIsGenerating(true);
-    
+
     try {
-      // Simulate network delay for demo purposes
       setTimeout(() => {
         const newBarcodeId = generateBarcodeId();
         setBarcodeId(newBarcodeId);
-        
-        // Generate barcode SVG with product details
         const svg = generateBarcodeSvg(newBarcodeId, {
           product: formData.product,
           preparedBy: formData.preparedBy,
@@ -105,7 +119,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
         });
         setBarcodeSvg(svg);
         setIsGenerating(false);
-        
+
         toast.success("Barcode generated successfully!");
       }, 800);
     } catch (error) {
@@ -116,7 +130,6 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   
   const handlePrint = async () => {
     if (!barcodeId) return;
-    
     toast.promise(
       printBarcode(barcodeId, {
         product: formData.product,
@@ -135,13 +148,11 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   
   const handleSave = () => {
     if (!barcodeId) return;
-    
     onSubmit({
       ...formData,
       barcodeId,
     });
-    
-    // Reset form if save is successful
+
     if (!isSubmitting) {
       setFormData({
         product: "",
@@ -161,14 +172,26 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
         <form onSubmit={generateLabel} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="product">Product Name</Label>
-            <Input
-              id="product"
-              name="product"
-              placeholder="e.g. Chicken Stock"
+            <Select
               value={formData.product}
-              onChange={handleChange}
+              onValueChange={handleProductTypeChange}
               required
-            />
+            >
+              <SelectTrigger id="product" name="product">
+                <SelectValue placeholder="Select a product (food type)" />
+              </SelectTrigger>
+              <SelectContent>
+                {foodTypes.length > 0 ? (
+                  foodTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    No food types defined
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
