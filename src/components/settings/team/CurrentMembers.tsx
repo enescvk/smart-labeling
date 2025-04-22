@@ -9,9 +9,10 @@ import type { RestaurantMember } from "@/services/restaurants/types";
 interface CurrentMembersProps {
   members: RestaurantMember[];
   isLoading: boolean;
+  isAdmin: boolean;
 }
 
-export const CurrentMembers = ({ members, isLoading }: CurrentMembersProps) => {
+export const CurrentMembers = ({ members, isLoading, isAdmin }: CurrentMembersProps) => {
   const queryClient = useQueryClient();
 
   const removeMemberMutation = useMutation({
@@ -54,16 +55,19 @@ export const CurrentMembers = ({ members, isLoading }: CurrentMembersProps) => {
             <h4 className="font-medium">{member.user?.email}</h4>
             <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
           </div>
-          <Button 
-            size="sm" 
-            variant="destructive"
-            onClick={() => removeMemberMutation.mutate(member.id)}
-            disabled={removeMemberMutation.isPending}
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
+          {isAdmin && (
+            <Button 
+              size="sm" 
+              variant="destructive"
+              onClick={() => removeMemberMutation.mutate(member.id)}
+              disabled={removeMemberMutation.isPending}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       ))}
     </div>
   );
 };
+

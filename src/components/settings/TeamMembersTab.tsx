@@ -67,34 +67,42 @@ export const TeamMembersTab = ({ selectedRestaurantId }: TeamMembersTabProps) =>
       <CardContent>
         {isLoadingAdminStatus ? (
           <div className="text-center py-2">Checking permissions...</div>
-        ) : isAdmin ? (
+        ) : (
           <div className="space-y-6">
-            <AddTeamMemberForm restaurantId={selectedRestaurantId} />
+            {isAdmin && (
+              <AddTeamMemberForm restaurantId={selectedRestaurantId} />
+            )}
 
             <div>
               <h3 className="font-medium mb-4">Current Team Members</h3>
               <CurrentMembers 
                 members={members} 
                 isLoading={isLoadingMembers} 
+                isAdmin={isAdmin}
               />
             </div>
 
-            <div>
-              <h3 className="font-medium mb-4">Pending Team Members</h3>
-              <PendingInvitations 
-                invitations={pendingInvitations} 
-                isLoading={isLoadingPendingInvitations} 
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-6 border rounded-md">
-            <p className="text-muted-foreground">
-              You need to be an admin to manage team members for this restaurant
-            </p>
+            {isAdmin && (
+              <div>
+                <h3 className="font-medium mb-4">Pending Team Members</h3>
+                <PendingInvitations 
+                  invitations={pendingInvitations} 
+                  isLoading={isLoadingPendingInvitations} 
+                />
+              </div>
+            )}
+
+            {!isAdmin && (
+              <div className="text-center py-6 border rounded-md">
+                <p className="text-muted-foreground">
+                  Only restaurant admins can add or invite team members. You can view current members below.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
+
