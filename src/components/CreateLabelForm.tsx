@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { getRestaurantSettings } from "@/services/settings/restaurantSettings";
 import { getRestaurantFoodTypes } from "@/services/settings/restaurantFoodTypes";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { getRestaurantMembers } from "@/services/restaurants/memberService";
 
 export interface LabelFormData {
   product: string;
@@ -50,7 +51,8 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   const [foodTypes, setFoodTypes] = useState<string[]>([
     'Main Course', 'Appetizer', 'Dessert', 'Beverage', 'Side Dish'
   ]);
-  
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
     const loadData = async () => {
       if (!selectedRestaurant) return;
@@ -78,15 +80,24 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
       } catch (error) {
         console.error("Failed to load food types:", error);
       }
+
+      try {
+        const fetchedMembers = await getRestaurantMembers(selectedRestaurant.id);
+        const memberOptions = fetchedMembers.map((m) => ({
+          id: m.user_id,
+          name: m.user?.email || m.user_id,
+        }));
+        setMembers(memberOptions);
+        if (formData.preparedBy && !memberOptions.find(m => m.id === formData.preparedBy)) {
+          setFormData(prev => ({ ...prev, preparedBy: "" }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch restaurant members:", error);
+      }
     };
 
     loadData();
   }, [selectedRestaurant]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
   
   const handleContainerTypeChange = (value: string) => {
     setFormData((prev) => ({ ...prev, containerType: value }));
@@ -94,6 +105,15 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
 
   const handleProductTypeChange = (value: string) => {
     setFormData((prev) => ({ ...prev, product: value }));
+  };
+
+  const handlePreparedByChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, preparedBy: value }));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const generateLabel = (e: React.FormEvent) => {
@@ -112,7 +132,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
         setBarcodeId(newBarcodeId);
         const svg = generateBarcodeSvg(newBarcodeId, {
           product: formData.product,
-          preparedBy: formData.preparedBy,
+          preparedBy: members.find((m) => m.id === formData.preparedBy)?.name || "",
           containerType: formData.containerType,
           preparedDate: formData.preparedDate,
           expiryDate: formData.expiryDate
@@ -133,7 +153,7 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
     toast.promise(
       printBarcode(barcodeId, {
         product: formData.product,
-        preparedBy: formData.preparedBy,
+        preparedBy: members.find((m) => m.id === formData.preparedBy)?.name || "",
         containerType: formData.containerType,
         preparedDate: formData.preparedDate,
         expiryDate: formData.expiryDate
@@ -196,14 +216,26 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="preparedBy">Prepared By</Label>
-            <Input
-              id="preparedBy"
-              name="preparedBy"
-              placeholder="e.g. John Smith"
+            <Select
               value={formData.preparedBy}
-              onChange={handleChange}
+              onValueChange={handlePreparedByChange}
               required
-            />
+            >
+              <SelectTrigger id="preparedBy" name="preparedBy">
+                <SelectValue placeholder="Select team member..." />
+              </SelectTrigger>
+              <SelectContent>
+                {members.length > 0 ? (
+                  members.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    No team members found
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
