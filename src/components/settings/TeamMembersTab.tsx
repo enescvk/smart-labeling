@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { 
   Card, 
@@ -91,18 +90,9 @@ export const TeamMembersTab = ({ selectedRestaurantId }: TeamMembersTabProps) =>
                 />
               </div>
             )}
-
-            {!isAdmin && (
-              <div className="text-center py-6 border rounded-md">
-                <p className="text-muted-foreground">
-                  Only restaurant admins can add or invite team members. You can view current members below.
-                </p>
-              </div>
-            )}
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
-
