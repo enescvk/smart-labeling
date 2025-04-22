@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { z } from "zod";
@@ -27,14 +26,14 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
-// Define the validation schema for login
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
-// Define the validation schema for signup - now with restaurant name
 const signupSchema = z.object({
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().min(1, { message: "Last name is required" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
@@ -44,7 +43,6 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// Define the validation schema for forgot password
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
 });
@@ -60,14 +58,12 @@ const Auth: React.FC = () => {
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
   const navigate = useNavigate();
   
-  // Get the current restaurant name if any
   const { data: restaurantName } = useQuery({
     queryKey: ['currentRestaurantName'],
     queryFn: getCurrentRestaurantName,
-    enabled: false, // Don't fetch automatically, we'll do it manually after login
+    enabled: false,
   });
-  
-  // Initialize forms outside of any conditional returns
+
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -79,13 +75,15 @@ const Auth: React.FC = () => {
   const signupForm = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
       restaurantName: "",
     },
   });
-  
+
   const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -93,7 +91,6 @@ const Auth: React.FC = () => {
     },
   });
 
-  // Handle login form submission
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
       await signIn(values.email, values.password);
@@ -102,16 +99,16 @@ const Auth: React.FC = () => {
     }
   };
 
-  // Handle signup form submission
   const onSignupSubmit = async (values: SignupFormValues) => {
     try {
       setIsCreatingRestaurant(true);
       
-      // Sign up the user with restaurant name in metadata
       await signUp(
         values.email, 
         values.password, 
-        values.restaurantName
+        values.restaurantName,
+        values.firstName,
+        values.lastName
       );
       
       toast({
@@ -126,8 +123,7 @@ const Auth: React.FC = () => {
       setIsCreatingRestaurant(false);
     }
   };
-  
-  // Handle forgot password form submission
+
   const onForgotPasswordSubmit = async (values: ForgotPasswordFormValues) => {
     try {
       setIsResettingPassword(true);
@@ -145,7 +141,6 @@ const Auth: React.FC = () => {
         description: "Check your email for a link to reset your password",
       });
       
-      // Return to login tab after successful submission
       setActiveTab("login");
     } catch (error: any) {
       console.error("Forgot password error:", error);
@@ -159,7 +154,6 @@ const Auth: React.FC = () => {
     }
   };
 
-  // If still loading, show loading spinner
   if (isLoading) {
     return (
       <Layout>
@@ -170,8 +164,7 @@ const Auth: React.FC = () => {
       </Layout>
     );
   }
-  
-  // If user is already logged in, redirect to home page
+
   if (user) {
     return <Navigate to="/" />;
   }
@@ -269,6 +262,32 @@ const Auth: React.FC = () => {
                 <CardContent>
                   <Form {...signupForm}>
                     <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
+                      <FormField
+                        control={signupForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="First Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signupForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Last Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <FormField
                         control={signupForm.control}
                         name="email"

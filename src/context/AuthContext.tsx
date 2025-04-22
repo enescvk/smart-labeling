@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +9,13 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, restaurantName?: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    restaurantName?: string,
+    firstName?: string,
+    lastName?: string
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (newPassword: string) => Promise<void>;
@@ -109,16 +114,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, restaurantName?: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    restaurantName?: string,
+    firstName?: string,
+    lastName?: string
+  ) => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: restaurantName ? {
-            restaurant_name: restaurantName,
-          } : undefined,
+          data: {
+            ...(restaurantName ? { restaurant_name: restaurantName } : {}),
+            ...(firstName ? { first_name: firstName } : {}),
+            ...(lastName ? { last_name: lastName } : {}),
+          }
         }
       });
 
