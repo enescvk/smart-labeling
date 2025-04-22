@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(currentSession?.user ?? null);
         
         if (event === 'SIGNED_IN') {
+          // Using setTimeout to prevent potential deadlocks with Supabase auth
           setTimeout(() => {
-            loadFirstRestaurant();
+            console.log("Loading first restaurant after sign in");
+            loadFirstRestaurant().then(() => {
+              console.log("First restaurant loaded after sign in");
+            });
             toast({
               title: "Signed in successfully",
               description: "Welcome back!",
@@ -63,7 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (currentSession?.user) {
         setTimeout(() => {
-          loadFirstRestaurant();
+          console.log("Loading first restaurant for existing session");
+          loadFirstRestaurant().then(() => {
+            console.log("First restaurant loaded for existing session");
+          });
         }, 0);
       }
       

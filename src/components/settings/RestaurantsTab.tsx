@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -161,6 +162,7 @@ export const RestaurantsTab = () => {
     try {
       await setDefaultRestaurant(restaurantId);
       setDefaultRestaurantId(restaurantId);
+      console.log("Default restaurant set to:", restaurantId);
       toast({
         title: "Default restaurant set",
         description: "This restaurant will be selected by default when you sign in.",

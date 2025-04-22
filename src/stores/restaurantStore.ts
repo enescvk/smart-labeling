@@ -29,11 +29,11 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
           // Find the default restaurant in the list
           const defaultRestaurant = restaurants.find(r => r.id === defaultRestaurantId);
           if (defaultRestaurant) {
-            console.log("Setting default restaurant:", defaultRestaurant.name);
+            console.log("Found and setting default restaurant:", defaultRestaurant.name);
             set({ selectedRestaurant: defaultRestaurant });
             return;
           } else {
-            console.log("Default restaurant not found among user restaurants");
+            console.log("Default restaurant not found among user restaurants, ID was:", defaultRestaurantId);
           }
         }
         
@@ -52,9 +52,10 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
       
+      const key = `default_restaurant_${user.id}`;
       // Store the default restaurant preference in local storage
-      localStorage.setItem(`default_restaurant_${user.id}`, restaurantId);
-      console.log("Default restaurant saved:", restaurantId);
+      localStorage.setItem(key, restaurantId);
+      console.log("Default restaurant saved with key:", key, "value:", restaurantId);
       return;
     } catch (error) {
       console.error("Failed to set default restaurant:", error);
@@ -66,8 +67,10 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
+      const key = `default_restaurant_${user.id}`;
       // Get the default restaurant from local storage
-      const defaultId = localStorage.getItem(`default_restaurant_${user.id}`);
+      const defaultId = localStorage.getItem(key);
+      console.log("Retrieved default restaurant with key:", key, "value:", defaultId);
       return defaultId;
     } catch (error) {
       console.error("Failed to get default restaurant:", error);
