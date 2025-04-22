@@ -29,7 +29,7 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
 export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
   try {
     console.log("Fetching members for restaurant:", restaurantId);
-    
+
     // First, get all member IDs for this restaurant
     const { data: members, error } = await supabase
       .from('restaurant_members')
@@ -42,23 +42,23 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         updated_at
       `)
       .eq('restaurant_id', restaurantId);
-    
+
     if (error) {
       console.error("Error fetching restaurant members:", error);
       throw error;
     }
-    
+
     // Now get the profile information for each member
     const formattedMembers: RestaurantMember[] = [];
-    
+
     for (const member of members) {
       // Get the user profile for this member
       const { data: profile } = await supabase
         .from('profiles')
-        .select('username')
+        .select('username, first_name, last_name')
         .eq('id', member.user_id)
         .single();
-      
+
       formattedMembers.push({
         id: member.id,
         user_id: member.user_id,
@@ -67,11 +67,13 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         created_at: member.created_at,
         updated_at: member.updated_at,
         user: {
-          email: profile?.username || 'Unknown Email'
+          email: profile?.username || 'Unknown Email',
+          first_name: profile?.first_name ?? null,
+          last_name: profile?.last_name ?? null,
         }
       });
     }
-    
+
     console.log("Fetched members:", formattedMembers);
     return formattedMembers;
   } catch (error) {

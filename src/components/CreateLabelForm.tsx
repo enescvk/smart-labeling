@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -84,10 +83,22 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
 
       try {
         const fetchedMembers = await getRestaurantMembers(selectedRestaurant.id);
-        const memberOptions = fetchedMembers.map((m) => ({
-          id: m.user_id,
-          name: m.user?.email || m.user_id,
-        }));
+        const memberOptions = fetchedMembers.map((m) => {
+          let name = "";
+          if (m.user?.first_name || m.user?.last_name) {
+            if (m.user?.first_name && m.user?.last_name) {
+              name = `${m.user.first_name} ${m.user.last_name}`;
+            } else {
+              name = m.user?.first_name || m.user?.last_name || "";
+            }
+          } else {
+            name = m.user?.email || m.user_id;
+          }
+          return ({
+            id: m.user_id,
+            name
+          });
+        });
         setMembers(memberOptions);
         if (formData.preparedBy && !memberOptions.find(m => m.id === formData.preparedBy)) {
           setFormData(prev => ({ ...prev, preparedBy: "" }));
@@ -119,28 +130,25 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
 
   const generateLabel = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.product || !formData.preparedBy) {
       toast.error("Please fill all required fields");
       return;
     }
-
     setIsGenerating(true);
-
     try {
       setTimeout(() => {
         const newBarcodeId = generateBarcodeId();
         setBarcodeId(newBarcodeId);
+        const memberName = members.find((m) => m.id === formData.preparedBy)?.name || "";
         const svg = generateBarcodeSvg(newBarcodeId, {
           product: formData.product,
-          preparedBy: members.find((m) => m.id === formData.preparedBy)?.name || "",
+          preparedBy: memberName,
           containerType: formData.containerType,
           preparedDate: formData.preparedDate,
           expiryDate: formData.expiryDate
         });
         setBarcodeSvg(svg);
         setIsGenerating(false);
-
         toast.success("Barcode generated successfully!");
       }, 800);
     } catch (error) {
@@ -151,10 +159,11 @@ export const CreateLabelForm: React.FC<CreateLabelFormProps> = ({
   
   const handlePrint = async () => {
     if (!barcodeId) return;
+    const memberName = members.find((m) => m.id === formData.preparedBy)?.name || "";
     toast.promise(
       printBarcode(barcodeId, {
         product: formData.product,
-        preparedBy: members.find((m) => m.id === formData.preparedBy)?.name || "",
+        preparedBy: memberName,
         containerType: formData.containerType,
         preparedDate: formData.preparedDate,
         expiryDate: formData.expiryDate

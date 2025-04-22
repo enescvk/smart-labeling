@@ -1,3 +1,4 @@
+
 export type Restaurant = {
   id: string;
   name: string;
@@ -14,6 +15,8 @@ export type RestaurantMember = {
   updated_at: string;
   user?: {
     email: string;
+    first_name?: string | null;
+    last_name?: string | null;
   };
 };
 
