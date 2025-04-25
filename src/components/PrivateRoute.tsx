@@ -21,7 +21,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const [hasRestaurant, setHasRestaurant] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
-  const { selectedRestaurant, loadFirstRestaurant } = useRestaurantStore();
+  const { selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant } = useRestaurantStore();
 
   useEffect(() => {
     const checkUserRestaurant = async () => {
@@ -48,10 +48,23 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
           } else {
             setHasRestaurant(restaurants.length > 0);
             
-            // Auto-select the first restaurant if none is selected
-            if (restaurants.length > 0 && !selectedRestaurant) {
-              console.log("Auto-selecting first restaurant in PrivateRoute");
-              await loadFirstRestaurant();
+            // Auto-select the default restaurant if available
+            if (restaurants.length > 0) {
+              const defaultId = await getDefaultRestaurant();
+              console.log("Checking for default restaurant in PrivateRoute:", defaultId);
+              
+              if (defaultId) {
+                const defaultRestaurant = restaurants.find(r => r.id === defaultId);
+                if (defaultRestaurant) {
+                  console.log("Found default restaurant in PrivateRoute:", defaultRestaurant.name);
+                }
+              }
+              
+              // Load restaurant selection (this will use the default if available)
+              if (!selectedRestaurant) {
+                console.log("Auto-selecting restaurant in PrivateRoute");
+                await loadFirstRestaurant();
+              }
             }
           }
 
@@ -85,7 +98,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     } else if (!isLoading && !user) {
       setIsCheckingRestaurant(false);
     }
-  }, [user, isLoading, selectedRestaurant, loadFirstRestaurant]);
+  }, [user, isLoading, selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant]);
 
   if (isLoading || (user && isCheckingRestaurant)) {
     return (
