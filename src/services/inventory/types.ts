@@ -9,6 +9,10 @@ export interface InventoryItem {
   status: "active" | "used";
   createdAt: string;
   restaurantId?: string;
+  preparedByProfile?: {
+    first_name?: string | null;
+    last_name?: string | null;
+  };
 }
 
 // Convert from database schema to client format
@@ -23,5 +27,6 @@ export const mapDatabaseItem = (item: any): InventoryItem => {
     status: item.status,
     createdAt: item.created_at,
     restaurantId: item.restaurant_id,
+    preparedByProfile: item.profiles
   };
 };

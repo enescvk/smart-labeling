@@ -12,7 +12,13 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
   console.log(`Fetching all inventory items for restaurant: ${restaurantId}`);
   const { data, error } = await supabase
     .from("inventory")
-    .select("*")
+    .select(`
+      *,
+      profiles:prepared_by (
+        first_name,
+        last_name
+      )
+    `)
     .eq("restaurant_id", restaurantId)
     .order("created_at", { ascending: false });
 
@@ -35,7 +41,13 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
   console.log(`Fetching active inventory items for restaurant: ${restaurantId}`);
   const { data, error } = await supabase
     .from("inventory")
-    .select("*")
+    .select(`
+      *,
+      profiles:prepared_by (
+        first_name,
+        last_name
+      )
+    `)
     .eq("status", "active")
     .eq("restaurant_id", restaurantId)
     .order("created_at", { ascending: false });
