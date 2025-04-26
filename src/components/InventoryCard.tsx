@@ -1,3 +1,4 @@
+
 import React from "react";
 import { InventoryItem } from "../services/inventory/types";
 import { motion } from "framer-motion";
