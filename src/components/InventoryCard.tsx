@@ -1,4 +1,3 @@
-
 import React from "react";
 import { InventoryItem } from "../services/inventory/types";
 import { motion } from "framer-motion";
@@ -14,6 +13,11 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({ item, index = 0 })
   const today = new Date();
   const expiryDate = new Date(item.expiryDate);
   const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Format preparer name
+  const preparerName = item.preparedByProfile?.first_name || item.preparedByProfile?.last_name
+    ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim()
+    : item.preparedBy;
   
   // Determine status and styling
   let statusColor = "bg-green-100 text-green-800";
@@ -51,7 +55,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({ item, index = 0 })
       <div className="space-y-2 text-sm text-kitchen-600">
         <div className="flex items-center">
           <User className="w-4 h-4 mr-2 text-kitchen-400" />
-          <span>Prepared by: {item.preparedBy}</span>
+          <span>Prepared by: {preparerName}</span>
         </div>
         
         <div className="flex items-center">
