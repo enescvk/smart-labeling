@@ -6,7 +6,7 @@ export interface InventoryItem {
   preparedDate: string;
   expiryDate: string;
   containerType: string;
-  status: "active" | "used";
+  status: "active" | "used" | "waste";
   createdAt: string;
   restaurantId?: string;
   preparedByProfile?: {

@@ -52,7 +52,7 @@ export const addInventoryItem = async (
 };
 
 // Update item status
-export const updateItemStatus = async (id: string, status: "active" | "used"): Promise<void> => {
+export const updateItemStatus = async (id: string, status: "active" | "used" | "waste"): Promise<void> => {
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId) {
     throw new Error("No restaurant selected");
