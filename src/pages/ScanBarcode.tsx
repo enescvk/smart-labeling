@@ -20,7 +20,8 @@ const ScanBarcode: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
   
   const updateStatusMutation = useMutation({
-    mutationFn: (id: string) => updateItemStatus(id, "used"),
+    mutationFn: ({ id, status }: { id: string; status: "used" | "waste" }) => 
+      updateItemStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
     }
@@ -54,20 +55,45 @@ const ScanBarcode: React.FC = () => {
   const handleMarkAsUsed = () => {
     if (!foundItem) return;
     
-    updateStatusMutation.mutate(foundItem.id, {
-      onSuccess: () => {
-        toast.success("Item marked as used", {
-          description: `${foundItem.product} has been marked as used in inventory.`
-        });
-        
-        setFoundItem(null);
-      },
-      onError: (error) => {
-        toast.error("Failed to update item", {
-          description: error instanceof Error ? error.message : "An unexpected error occurred"
-        });
+    updateStatusMutation.mutate(
+      { id: foundItem.id, status: "used" },
+      {
+        onSuccess: () => {
+          toast.success("Item marked as used", {
+            description: `${foundItem.product} has been marked as used in inventory.`
+          });
+          
+          setFoundItem(null);
+        },
+        onError: (error) => {
+          toast.error("Failed to update item", {
+            description: error instanceof Error ? error.message : "An unexpected error occurred"
+          });
+        }
       }
-    });
+    );
+  };
+
+  const handleMarkAsWaste = () => {
+    if (!foundItem) return;
+    
+    updateStatusMutation.mutate(
+      { id: foundItem.id, status: "waste" },
+      {
+        onSuccess: () => {
+          toast.success("Item marked as waste", {
+            description: `${foundItem.product} has been marked as waste in inventory.`
+          });
+          
+          setFoundItem(null);
+        },
+        onError: (error) => {
+          toast.error("Failed to update item", {
+            description: error instanceof Error ? error.message : "An unexpected error occurred"
+          });
+        }
+      }
+    );
   };
 
   const handlePrintLabel = async () => {
@@ -142,7 +168,7 @@ const ScanBarcode: React.FC = () => {
                   <InventoryCard item={foundItem} />
                   
                   <motion.div 
-                    className="mt-4 grid grid-cols-2 gap-3"
+                    className="mt-4 grid grid-cols-3 gap-3"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
@@ -158,14 +184,26 @@ const ScanBarcode: React.FC = () => {
                     </Button>
                     
                     {foundItem.status === "active" && (
-                      <Button
-                        onClick={handleMarkAsUsed}
-                        className="flex items-center justify-center"
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        {updateStatusMutation.isPending ? "Updating..." : "Mark as Used"}
-                      </Button>
+                      <>
+                        <Button
+                          onClick={handleMarkAsUsed}
+                          className="flex items-center justify-center"
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          {updateStatusMutation.isPending ? "Updating..." : "Mark as Used"}
+                        </Button>
+
+                        <Button
+                          onClick={handleMarkAsWaste}
+                          variant="destructive"
+                          className="flex items-center justify-center"
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {updateStatusMutation.isPending ? "Updating..." : "Mark as Waste"}
+                        </Button>
+                      </>
                     )}
                   </motion.div>
                 </motion.div>
