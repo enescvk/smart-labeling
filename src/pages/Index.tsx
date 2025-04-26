@@ -87,10 +87,30 @@ const Index: React.FC = () => {
         // Create a map to store unique items by ID to prevent duplicates
         const itemsMap = new Map();
         
-        // Add all items to the map, with the ID as the key to ensure uniqueness
-        [...activeItems, ...expiringItems, ...expiredItems].forEach(item => {
-          itemsMap.set(item.id, item);
-        });
+        // Process each category of items
+        const processItems = (items) => {
+          items.forEach(item => {
+            // If the item already exists in our map, only update it if it doesn't have profile data
+            if (itemsMap.has(item.id)) {
+              const existingItem = itemsMap.get(item.id);
+              
+              // If the current item has profile data but the existing one doesn't, update it
+              if (item.preparedByProfile && (!existingItem.preparedByProfile || 
+                 (!existingItem.preparedByProfile.first_name && !existingItem.preparedByProfile.last_name))) {
+                itemsMap.set(item.id, item);
+              }
+            } else {
+              // If the item doesn't exist in our map, add it
+              itemsMap.set(item.id, item);
+            }
+          });
+        };
+        
+        // Process each category of items in priority order
+        // Active items likely have the most complete data
+        processItems(activeItems);
+        processItems(expiringItems);
+        processItems(expiredItems);
         
         // Convert the map values back to an array
         return Array.from(itemsMap.values());
