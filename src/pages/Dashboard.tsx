@@ -22,25 +22,37 @@ const Dashboard: React.FC = () => {
   // Fetch all data needed for dashboard
   const { data: activeItems = [], isLoading: activeLoading } = useQuery({
     queryKey: ['inventoryItems', 'active', restaurantId],
-    queryFn: () => getActiveInventoryItems(restaurantId),
+    queryFn: () => {
+      console.log("Dashboard: Fetching active items for restaurant:", restaurantId);
+      return getActiveInventoryItems(restaurantId);
+    },
     enabled: !!restaurantId
   });
 
   const { data: recentItems = [], isLoading: recentLoading } = useQuery({
     queryKey: ['inventoryItems', 'recent', restaurantId],
-    queryFn: () => getRecentItems(restaurantId),
+    queryFn: () => {
+      console.log("Dashboard: Fetching recent items for restaurant:", restaurantId);
+      return getRecentItems(restaurantId);
+    },
     enabled: !!restaurantId
   });
   
   const { data: expiringItems = [], isLoading: expiringLoading } = useQuery({
     queryKey: ['inventoryItems', 'expiring', restaurantId],
-    queryFn: () => getExpiringItems(restaurantId),
+    queryFn: () => {
+      console.log("Dashboard: Fetching expiring items for restaurant:", restaurantId);
+      return getExpiringItems(restaurantId);
+    },
     enabled: !!restaurantId
   });
   
   const { data: expiredItems = [], isLoading: expiredLoading } = useQuery({
     queryKey: ['inventoryItems', 'expired', restaurantId],
-    queryFn: () => getExpiredItems(restaurantId),
+    queryFn: () => {
+      console.log("Dashboard: Fetching expired items for restaurant:", restaurantId);
+      return getExpiredItems(restaurantId);
+    },
     enabled: !!restaurantId
   });
 

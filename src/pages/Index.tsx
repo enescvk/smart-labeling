@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +24,10 @@ const Index: React.FC = () => {
     isLoading: isLoadingActive 
   } = useQuery({
     queryKey: ['inventoryItems', 'active', selectedRestaurant?.id],
-    queryFn: () => getActiveInventoryItems(selectedRestaurant?.id),
+    queryFn: () => {
+      console.log("Fetching active items for restaurant:", selectedRestaurant?.id);
+      return getActiveInventoryItems(selectedRestaurant?.id);
+    },
     enabled: !!selectedRestaurant
   });
   
@@ -32,7 +36,10 @@ const Index: React.FC = () => {
     isLoading: isLoadingRecent 
   } = useQuery({
     queryKey: ['inventoryItems', 'recent', selectedRestaurant?.id],
-    queryFn: () => getRecentItems(selectedRestaurant?.id),
+    queryFn: () => {
+      console.log("Fetching recent items for restaurant:", selectedRestaurant?.id);
+      return getRecentItems(selectedRestaurant?.id);
+    },
     enabled: !!selectedRestaurant
   });
   
@@ -41,7 +48,10 @@ const Index: React.FC = () => {
     isLoading: isLoadingExpiring 
   } = useQuery({
     queryKey: ['inventoryItems', 'expiring', selectedRestaurant?.id],
-    queryFn: () => getExpiringItems(selectedRestaurant?.id),
+    queryFn: () => {
+      console.log("Fetching expiring items for restaurant:", selectedRestaurant?.id);
+      return getExpiringItems(selectedRestaurant?.id);
+    },
     enabled: !!selectedRestaurant
   });
   
@@ -50,7 +60,10 @@ const Index: React.FC = () => {
     isLoading: isLoadingExpired 
   } = useQuery({
     queryKey: ['inventoryItems', 'expired', selectedRestaurant?.id],
-    queryFn: () => getExpiredItems(selectedRestaurant?.id),
+    queryFn: () => {
+      console.log("Fetching expired items for restaurant:", selectedRestaurant?.id);
+      return getExpiredItems(selectedRestaurant?.id);
+    },
     enabled: !!selectedRestaurant
   });
   
