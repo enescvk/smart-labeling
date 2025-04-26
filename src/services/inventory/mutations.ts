@@ -52,9 +52,9 @@ export const addInventoryItem = async (
 };
 
 // Update item status
-export const updateItemStatus = async (id: string, status: "active" | "used" | "waste"): Promise<InventoryItem | null> => {
+export const updateItemStatus = async (id: string, status: "active" | "used" | "waste", specificRestaurantId?: string): Promise<InventoryItem | null> => {
   try {
-    const restaurantId = await getCurrentRestaurantId();
+    const restaurantId = specificRestaurantId || await getCurrentRestaurantId();
     if (!restaurantId) {
       console.error("No restaurant ID available for updating item status");
       throw new Error("No restaurant selected");

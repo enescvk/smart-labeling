@@ -23,7 +23,7 @@ const ScanBarcode: React.FC = () => {
   
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "active" | "used" | "waste" }) => 
-      updateItemStatus(id, status),
+      selectedRestaurant ? updateItemStatus(id, status, selectedRestaurant.id) : Promise.reject("No restaurant selected"),
     onSuccess: (updatedItem) => {
       // Invalidate queries to refresh data after successful update
       queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
@@ -36,6 +36,12 @@ const ScanBarcode: React.FC = () => {
         // If no item is returned, refresh from the database
         refreshItem(foundItem.id);
       }
+    },
+    onError: (error) => {
+      console.error("Error in update mutation:", error);
+      toast.error("Failed to update item status", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      });
     }
   });
   
@@ -43,7 +49,7 @@ const ScanBarcode: React.FC = () => {
     if (!selectedRestaurant) return;
     
     try {
-      console.log(`Refreshing item ${itemId} data from database`);
+      console.log(`Refreshing item ${itemId} data from database for restaurant ${selectedRestaurant.id}`);
       const updatedItem = await getItemById(itemId, selectedRestaurant.id);
       console.log("Refreshed item status:", updatedItem?.status);
       setFoundItem(updatedItem);
@@ -62,7 +68,7 @@ const ScanBarcode: React.FC = () => {
         return;
       }
       
-      console.log(`Looking up item with barcode: ${barcode}`);
+      console.log(`Looking up item with barcode: ${barcode} for restaurant ${selectedRestaurant.id}`);
       const item = await getItemById(barcode, selectedRestaurant.id);
       setFoundItem(item);
       if (!item) {
@@ -82,9 +88,9 @@ const ScanBarcode: React.FC = () => {
   };
   
   const handleMarkAsUsed = () => {
-    if (!foundItem) return;
+    if (!foundItem || !selectedRestaurant) return;
     
-    console.log("Marking item as used:", foundItem.id);
+    console.log("Marking item as used:", foundItem.id, "for restaurant:", selectedRestaurant.id);
     updateStatusMutation.mutate(
       { id: foundItem.id, status: "used" },
       {
@@ -92,31 +98,21 @@ const ScanBarcode: React.FC = () => {
           toast.success("Item marked as used", {
             description: `${foundItem.product} has been marked as used in inventory.`
           });
-        },
-        onError: (error) => {
-          toast.error("Failed to update item", {
-            description: error instanceof Error ? error.message : "An unexpected error occurred"
-          });
         }
       }
     );
   };
 
   const handleMarkAsWaste = () => {
-    if (!foundItem) return;
+    if (!foundItem || !selectedRestaurant) return;
     
-    console.log("Marking item as waste:", foundItem.id);
+    console.log("Marking item as waste:", foundItem.id, "for restaurant:", selectedRestaurant.id);
     updateStatusMutation.mutate(
       { id: foundItem.id, status: "waste" },
       {
         onSuccess: () => {
           toast.success("Item marked as waste", {
             description: `${foundItem.product} has been marked as waste in inventory.`
-          });
-        },
-        onError: (error) => {
-          toast.error("Failed to update item", {
-            description: error instanceof Error ? error.message : "An unexpected error occurred"
           });
         }
       }
