@@ -60,11 +60,12 @@ export const updateItemStatus = async (id: string, status: "active" | "used" | "
 
   console.log(`Updating item ${id} to status: ${status}`);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("inventory")
     .update({ status })
     .eq("id", id)
-    .eq("restaurant_id", restaurantId);
+    .eq("restaurant_id", restaurantId)
+    .select();
 
   if (error) {
     console.error("Error updating inventory item status:", error);
@@ -72,4 +73,10 @@ export const updateItemStatus = async (id: string, status: "active" | "used" | "
   }
 
   console.log(`Successfully updated item ${id} to status: ${status}`);
-};
+  
+  if (data) {
+    console.log("Updated data returned:", data);
+  } else {
+    console.warn("No data returned after update - this could mean the item wasn't found or wasn't changed");
+  }
+}

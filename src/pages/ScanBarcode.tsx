@@ -25,9 +25,27 @@ const ScanBarcode: React.FC = () => {
     mutationFn: ({ id, status }: { id: string; status: "used" | "waste" }) => 
       updateItemStatus(id, status),
     onSuccess: () => {
+      // Invalidate queries to refresh data after successful update
       queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
+      
+      // Fetch the updated item to refresh the UI
+      if (foundItem) {
+        refreshItem(foundItem.id);
+      }
     }
   });
+  
+  const refreshItem = async (itemId: string) => {
+    if (!selectedRestaurant) return;
+    
+    try {
+      const updatedItem = await getItemById(itemId, selectedRestaurant.id);
+      console.log("Refreshed item status:", updatedItem?.status);
+      setFoundItem(updatedItem);
+    } catch (error) {
+      console.error("Error refreshing item:", error);
+    }
+  };
   
   const handleBarcodeFound = async (barcode: string) => {
     setIsLoading(true);
@@ -44,6 +62,8 @@ const ScanBarcode: React.FC = () => {
         toast.error("Item not found", {
           description: "The scanned barcode does not match any item in inventory."
         });
+      } else {
+        console.log("Found item with status:", item.status);
       }
     } catch (error) {
       toast.error("Error finding item", {
@@ -57,6 +77,7 @@ const ScanBarcode: React.FC = () => {
   const handleMarkAsUsed = () => {
     if (!foundItem) return;
     
+    console.log("Marking item as used:", foundItem.id);
     updateStatusMutation.mutate(
       { id: foundItem.id, status: "used" },
       {
@@ -64,8 +85,6 @@ const ScanBarcode: React.FC = () => {
           toast.success("Item marked as used", {
             description: `${foundItem.product} has been marked as used in inventory.`
           });
-          
-          setFoundItem(null);
         },
         onError: (error) => {
           toast.error("Failed to update item", {
@@ -79,6 +98,7 @@ const ScanBarcode: React.FC = () => {
   const handleMarkAsWaste = () => {
     if (!foundItem) return;
     
+    console.log("Marking item as waste:", foundItem.id);
     updateStatusMutation.mutate(
       { id: foundItem.id, status: "waste" },
       {
@@ -86,8 +106,6 @@ const ScanBarcode: React.FC = () => {
           toast.success("Item marked as waste", {
             description: `${foundItem.product} has been marked as waste in inventory.`
           });
-          
-          setFoundItem(null);
         },
         onError: (error) => {
           toast.error("Failed to update item", {
