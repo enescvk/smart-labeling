@@ -19,6 +19,8 @@ const Index: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
   const [currentFilter, setCurrentFilter] = useState<FilterType>('active');
   
+  console.log("Index page - Selected restaurant:", selectedRestaurant?.name, selectedRestaurant?.id);
+  
   const { 
     data: activeItems = [], 
     isLoading: isLoadingActive 
@@ -89,6 +91,9 @@ const Index: React.FC = () => {
   const handleFilterChange = (filter: FilterType) => {
     setCurrentFilter(filter);
   };
+
+  // Debug log to see which items are displayed
+  console.log(`Index page - Showing ${getFilteredItems().length} items for restaurant: ${selectedRestaurant?.name}`);
 
   return (
     <Layout>

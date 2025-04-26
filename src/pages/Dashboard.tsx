@@ -19,6 +19,8 @@ const Dashboard: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
   const restaurantId = selectedRestaurant?.id;
   
+  console.log("Dashboard page - Selected restaurant:", selectedRestaurant?.name, restaurantId);
+  
   // Fetch all data needed for dashboard
   const { data: activeItems = [], isLoading: activeLoading } = useQuery({
     queryKey: ['inventoryItems', 'active', restaurantId],
@@ -58,6 +60,9 @@ const Dashboard: React.FC = () => {
 
   const isLoading = activeLoading || recentLoading || expiringLoading || expiredLoading;
   const allItems = [...activeItems, ...expiredItems, ...recentItems];
+  
+  // Log item count
+  console.log(`Dashboard: Found total of ${allItems.length} items for restaurant ${restaurantId}`);
   
   // Animation variants
   const containerVariants = {

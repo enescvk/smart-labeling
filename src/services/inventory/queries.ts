@@ -9,6 +9,7 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
     return [];
   }
 
+  console.log(`Fetching all inventory items for restaurant: ${restaurantId}`);
   const { data, error } = await supabase
     .from("inventory")
     .select("*")
@@ -20,6 +21,7 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
     return [];
   }
 
+  console.log(`Found ${data?.length || 0} inventory items for restaurant ${restaurantId}`);
   return data.map(mapDatabaseItem);
 };
 
@@ -30,6 +32,7 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
     return [];
   }
 
+  console.log(`Fetching active inventory items for restaurant: ${restaurantId}`);
   const { data, error } = await supabase
     .from("inventory")
     .select("*")
@@ -42,6 +45,7 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
     return [];
   }
 
+  console.log(`Found ${data?.length || 0} active inventory items for restaurant ${restaurantId}`);
   return data.map(mapDatabaseItem);
 };
 
@@ -52,6 +56,7 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
     return null;
   }
 
+  console.log(`Fetching inventory item by ID: ${id} for restaurant: ${restaurantId}`);
   const { data, error } = await supabase
     .from("inventory")
     .select("*")
@@ -64,5 +69,6 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
     return null;
   }
 
+  console.log(`Found inventory item with ID: ${id} for restaurant ${restaurantId}`);
   return mapDatabaseItem(data);
 };

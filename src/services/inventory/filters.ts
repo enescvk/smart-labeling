@@ -11,6 +11,7 @@ export const getExpiringItems = async (restaurantId?: string | null): Promise<In
     return [];
   }
 
+  console.log(`Fetching expiring items for restaurant: ${restaurantId}`);
   const today = new Date();
   const twoDaysLater = new Date();
   twoDaysLater.setDate(today.getDate() + 2);
@@ -30,6 +31,7 @@ export const getExpiringItems = async (restaurantId?: string | null): Promise<In
     return [];
   }
 
+  console.log(`Found ${data?.length || 0} expiring items for restaurant ${restaurantId}`);
   return data.map(mapDatabaseItem);
 };
 
@@ -40,6 +42,7 @@ export const getExpiredItems = async (restaurantId?: string | null): Promise<Inv
     return [];
   }
 
+  console.log(`Fetching expired items for restaurant: ${restaurantId}`);
   const today = new Date();
   
   // Directly query the database rather than filtering client-side
@@ -56,6 +59,7 @@ export const getExpiredItems = async (restaurantId?: string | null): Promise<Inv
     return [];
   }
 
+  console.log(`Found ${data?.length || 0} expired items for restaurant ${restaurantId}`);
   return data.map(mapDatabaseItem);
 };
 
@@ -66,6 +70,7 @@ export const getRecentItems = async (restaurantId?: string | null): Promise<Inve
     return [];
   }
 
+  console.log(`Fetching recent items for restaurant: ${restaurantId}`);
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -81,5 +86,6 @@ export const getRecentItems = async (restaurantId?: string | null): Promise<Inve
     return [];
   }
 
+  console.log(`Found ${data?.length || 0} recent items for restaurant ${restaurantId}`);
   return data.map(mapDatabaseItem);
 };
