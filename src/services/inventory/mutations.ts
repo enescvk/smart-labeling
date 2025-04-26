@@ -58,6 +58,8 @@ export const updateItemStatus = async (id: string, status: "active" | "used" | "
     throw new Error("No restaurant selected");
   }
 
+  console.log(`Updating item ${id} to status: ${status}`);
+
   const { error } = await supabase
     .from("inventory")
     .update({ status })
@@ -68,4 +70,6 @@ export const updateItemStatus = async (id: string, status: "active" | "used" | "
     console.error("Error updating inventory item status:", error);
     throw error;
   }
+
+  console.log(`Successfully updated item ${id} to status: ${status}`);
 };
