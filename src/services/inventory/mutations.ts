@@ -4,15 +4,19 @@ import { getCurrentRestaurantId } from "@/services/restaurants/restaurantService
 import { InventoryItem, mapDatabaseItem } from "./types";
 
 // Add inventory item
-export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): Promise<InventoryItem> => {
+export const addInventoryItem = async (
+  item: Omit<InventoryItem, "createdAt">, 
+  restaurantId?: string | null
+): Promise<InventoryItem> => {
   try {
-    const restaurantId = await getCurrentRestaurantId();
-    if (!restaurantId) {
+    // If no restaurantId is provided, try to get the current restaurant ID
+    const effectiveRestaurantId = restaurantId || await getCurrentRestaurantId();
+    if (!effectiveRestaurantId) {
       console.error("No restaurant ID available for creating inventory item");
       throw new Error("No restaurant selected");
     }
 
-    console.log("Adding item to inventory with restaurant ID:", restaurantId);
+    console.log("Adding item to inventory with restaurant ID:", effectiveRestaurantId);
     console.log("Item data:", item);
 
     const { data, error } = await supabase.from("inventory").insert({
@@ -23,7 +27,7 @@ export const addInventoryItem = async (item: Omit<InventoryItem, "createdAt">): 
       expiry_date: item.expiryDate,
       container_type: item.containerType,
       status: item.status,
-      restaurant_id: restaurantId,
+      restaurant_id: effectiveRestaurantId,
     }).select();
 
     if (error) {

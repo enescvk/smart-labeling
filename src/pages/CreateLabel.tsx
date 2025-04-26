@@ -7,15 +7,21 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { addInventoryItem } from "../services/inventory";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRestaurantStore } from "@/stores/restaurantStore";
 
 const CreateLabel: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { selectedRestaurant } = useRestaurantStore();
+  
+  // Debug log to verify selected restaurant
+  console.log("CreateLabel page - Creating label for restaurant:", selectedRestaurant?.name, selectedRestaurant?.id);
   
   const addLabelMutation = useMutation({
     mutationFn: async (data: LabelFormData & { barcodeId: string }) => {
       try {
         console.log("Starting mutation to add label to inventory:", data);
+        console.log("Using restaurant ID:", selectedRestaurant?.id);
         const result = await addInventoryItem({
           id: data.barcodeId,
           product: data.product,
@@ -24,7 +30,7 @@ const CreateLabel: React.FC = () => {
           expiryDate: data.expiryDate,
           containerType: data.containerType,
           status: "active"
-        });
+        }, selectedRestaurant?.id);
         console.log("Successfully added to inventory, returning result:", result);
         return result;
       } catch (error) {
@@ -46,6 +52,13 @@ const CreateLabel: React.FC = () => {
   
   const handleSubmit = (data: LabelFormData & { barcodeId: string }) => {
     console.log("handleSubmit called with data:", data);
+    
+    if (!selectedRestaurant) {
+      toast.error("No restaurant selected", {
+        description: "Please select a restaurant before creating a label."
+      });
+      return;
+    }
     
     addLabelMutation.mutate(data, {
       onSuccess: () => {
@@ -91,6 +104,11 @@ const CreateLabel: React.FC = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               Fill out the form to generate a new barcode label
+              {selectedRestaurant && (
+                <span className="ml-1 font-medium">
+                  for {selectedRestaurant.name}
+                </span>
+              )}
             </motion.p>
           </header>
           
