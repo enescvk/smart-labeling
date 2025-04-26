@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +12,7 @@ import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { InventoryHeader } from "@/components/dashboard/InventoryHeader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 
-type FilterType = 'all' | 'active' | 'expiring' | 'expired';
+type FilterType = 'active' | 'expiring' | 'expired';
 
 const Index: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
@@ -70,10 +69,6 @@ const Index: React.FC = () => {
   });
   
   const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring || isLoadingExpired;
-  
-  const activeItemsCount = activeItems.length;
-  const usedItemsCount = 0;
-  const totalItems = activeItemsCount + usedItemsCount;
 
   const getFilteredItems = () => {
     switch (currentFilter) {
@@ -130,8 +125,7 @@ const Index: React.FC = () => {
         <PageHeader />
         
         <StatsGrid
-          totalItems={totalItems}
-          activeItemsCount={activeItemsCount}
+          activeItemsCount={activeItems.length}
           expiringItemsCount={expiringItems.length}
           expiredItemsCount={expiredItems.length}
           isLoading={isLoading}

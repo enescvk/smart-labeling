@@ -2,21 +2,19 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { StatsCard } from "./StatsCard";
-import { Barcode, Clock, ShoppingBag, AlertTriangle } from "lucide-react";
+import { Clock, ShoppingBag, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface StatsGridProps {
-  totalItems: number;
   activeItemsCount: number;
   expiringItemsCount: number;
   expiredItemsCount: number;
   isLoading: boolean;
-  onFilterChange: (filter: 'all' | 'active' | 'expiring' | 'expired') => void;
-  currentFilter: 'all' | 'active' | 'expiring' | 'expired';
+  onFilterChange: (filter: 'active' | 'expiring' | 'expired') => void;
+  currentFilter: 'active' | 'expiring' | 'expired';
 }
 
 export const StatsGrid: React.FC<StatsGridProps> = ({
-  totalItems,
   activeItemsCount,
   expiringItemsCount,
   expiredItemsCount,
@@ -36,8 +34,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {[1, 2, 3, 4].map((index) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {[1, 2, 3].map((index) => (
           <Card key={index} className="p-6 h-32 animate-pulse">
             <div className="h-4 bg-kitchen-100 rounded w-1/3 mb-4"></div>
             <div className="h-8 bg-kitchen-100 rounded w-1/2"></div>
@@ -49,16 +47,9 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
 
   const stats = [
     { 
-      title: "Total Items", 
-      value: totalItems, 
-      icon: ShoppingBag, 
-      color: "text-kitchen-300",
-      filter: 'all' as const,
-    },
-    { 
       title: "Active Items", 
       value: activeItemsCount, 
-      icon: Barcode, 
+      icon: ShoppingBag, 
       color: "text-primary/60",
       filter: 'active' as const,
     },
@@ -80,7 +71,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
 
   return (
     <motion.div 
-      className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+      className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
