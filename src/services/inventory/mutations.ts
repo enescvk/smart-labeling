@@ -52,31 +52,43 @@ export const addInventoryItem = async (
 };
 
 // Update item status
-export const updateItemStatus = async (id: string, status: "active" | "used" | "waste"): Promise<void> => {
-  const restaurantId = await getCurrentRestaurantId();
-  if (!restaurantId) {
-    throw new Error("No restaurant selected");
-  }
+export const updateItemStatus = async (id: string, status: "active" | "used" | "waste"): Promise<InventoryItem | null> => {
+  try {
+    const restaurantId = await getCurrentRestaurantId();
+    if (!restaurantId) {
+      console.error("No restaurant ID available for updating item status");
+      throw new Error("No restaurant selected");
+    }
 
-  console.log(`Updating item ${id} to status: ${status}`);
+    console.log(`Updating item ${id} to status: ${status} for restaurant ${restaurantId}`);
 
-  const { data, error } = await supabase
-    .from("inventory")
-    .update({ status })
-    .eq("id", id)
-    .eq("restaurant_id", restaurantId)
-    .select();
+    // Update the item and get the updated data
+    const { data, error } = await supabase
+      .from("inventory")
+      .update({ status })
+      .eq("id", id)
+      .eq("restaurant_id", restaurantId)
+      .select();
 
-  if (error) {
-    console.error("Error updating inventory item status:", error);
-    throw error;
-  }
+    if (error) {
+      console.error("Error updating inventory item status:", error);
+      throw error;
+    }
 
-  console.log(`Successfully updated item ${id} to status: ${status}`);
-  
-  if (data) {
-    console.log("Updated data returned:", data);
-  } else {
-    console.warn("No data returned after update - this could mean the item wasn't found or wasn't changed");
+    console.log(`Successfully updated item ${id} to status: ${status}`);
+    
+    if (!data || data.length === 0) {
+      console.warn("No data returned after update - this could mean the item wasn't found");
+      return null;
+    }
+    
+    console.log("Updated data returned:", data[0]);
+    return mapDatabaseItem(data[0]);
+  } catch (error) {
+    console.error("Exception in updateItemStatus:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Unknown error updating inventory item status");
   }
 }

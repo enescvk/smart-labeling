@@ -22,14 +22,18 @@ const ScanBarcode: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
   
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "used" | "waste" }) => 
+    mutationFn: ({ id, status }: { id: string; status: "active" | "used" | "waste" }) => 
       updateItemStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (updatedItem) => {
       // Invalidate queries to refresh data after successful update
       queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
       
-      // Fetch the updated item to refresh the UI
-      if (foundItem) {
+      // Update the UI with the returned item data if available
+      if (updatedItem) {
+        console.log("Setting updated item with status:", updatedItem.status);
+        setFoundItem(updatedItem);
+      } else if (foundItem) {
+        // If no item is returned, refresh from the database
         refreshItem(foundItem.id);
       }
     }
@@ -39,11 +43,13 @@ const ScanBarcode: React.FC = () => {
     if (!selectedRestaurant) return;
     
     try {
+      console.log(`Refreshing item ${itemId} data from database`);
       const updatedItem = await getItemById(itemId, selectedRestaurant.id);
       console.log("Refreshed item status:", updatedItem?.status);
       setFoundItem(updatedItem);
     } catch (error) {
       console.error("Error refreshing item:", error);
+      toast.error("Error refreshing item data");
     }
   };
   
@@ -56,6 +62,7 @@ const ScanBarcode: React.FC = () => {
         return;
       }
       
+      console.log(`Looking up item with barcode: ${barcode}`);
       const item = await getItemById(barcode, selectedRestaurant.id);
       setFoundItem(item);
       if (!item) {
