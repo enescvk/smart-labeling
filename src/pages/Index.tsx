@@ -83,8 +83,17 @@ const Index: React.FC = () => {
         return expiringItems;
       case 'expired':
         return expiredItems;
-      default:
-        return [...activeItems, ...expiringItems, ...expiredItems];
+      default: // 'all' case
+        // Create a map to store unique items by ID to prevent duplicates
+        const itemsMap = new Map();
+        
+        // Add all items to the map, with the ID as the key to ensure uniqueness
+        [...activeItems, ...expiringItems, ...expiredItems].forEach(item => {
+          itemsMap.set(item.id, item);
+        });
+        
+        // Convert the map values back to an array
+        return Array.from(itemsMap.values());
     }
   };
 
