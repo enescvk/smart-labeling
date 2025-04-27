@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,12 +29,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { PrepWatchRule } from "./PrepWatchTab"; // Import the type from PrepWatchTab
+import { PrepWatchRule } from "./PrepWatchTab";
 
 const formSchema = z.object({
   food_type: z.string().min(1, "Food type is required"),
   minimum_count: z.number().min(1, "Minimum count must be at least 1"),
-  frequency: z.enum(["hourly", "daily", "weekly", "monthly"]),
+  frequency: z.enum(["daily", "weekly", "monthly"]),
+  check_hour: z.number().min(0).max(23),
+  check_minute: z.number().min(0).max(59),
   notify_email: z.string().email("Invalid email address"),
 });
 
@@ -56,6 +57,8 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
     defaultValues: {
       minimum_count: 1,
       frequency: "daily",
+      check_hour: 9,
+      check_minute: 0,
     },
   });
 
@@ -76,7 +79,6 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
 
   const addRule = useMutation({
     mutationFn: async (data: FormData) => {
-      // Use type assertion to bypass TypeScript type checking for the table name
       const { error } = await supabase
         .from('prep_watch_settings' as any)
         .insert({
@@ -179,7 +181,6 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="hourly">Hourly</SelectItem>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
@@ -189,6 +190,48 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                 </FormItem>
               )}
             />
+
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="check_hour"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Check Hour (24h)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="check_minute"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Check Minute</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

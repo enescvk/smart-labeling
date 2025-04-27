@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +27,9 @@ export interface PrepWatchRule {
   id: string;
   food_type: string;
   minimum_count: number;
-  frequency: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  frequency: 'daily' | 'weekly' | 'monthly';
+  check_hour: number;
+  check_minute: number;
   notify_email: string;
   restaurant_id?: string;
 }
@@ -109,6 +110,7 @@ export const PrepWatchTab = () => {
                   <TableHead>Food Type</TableHead>
                   <TableHead>Minimum Count</TableHead>
                   <TableHead>Check Frequency</TableHead>
+                  <TableHead>Check Time</TableHead>
                   <TableHead>Notification Email</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -119,6 +121,9 @@ export const PrepWatchTab = () => {
                     <TableCell>{rule.food_type}</TableCell>
                     <TableCell>{rule.minimum_count}</TableCell>
                     <TableCell className="capitalize">{rule.frequency}</TableCell>
+                    <TableCell>
+                      {String(rule.check_hour).padStart(2, '0')}:{String(rule.check_minute).padStart(2, '0')}
+                    </TableCell>
                     <TableCell>{rule.notify_email}</TableCell>
                     <TableCell>
                       <Button
