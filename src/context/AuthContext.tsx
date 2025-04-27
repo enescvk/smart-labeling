@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { loadFirstRestaurant } = useRestaurantStore();
+  const { loadFirstRestaurant, setSelectedRestaurant } = useRestaurantStore();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -50,6 +51,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, 0);
         } else if (event === 'SIGNED_OUT') {
           setTimeout(() => {
+            // Clear the selected restaurant when the user signs out
+            setSelectedRestaurant(null);
+            
             toast({
               title: "Signed out",
               description: "You have been signed out successfully",
@@ -86,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [loadFirstRestaurant]);
+  }, [loadFirstRestaurant, setSelectedRestaurant]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -163,6 +167,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setIsLoading(true);
+      
+      // Clear the selected restaurant before signing out
+      setSelectedRestaurant(null);
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         setTimeout(() => {
