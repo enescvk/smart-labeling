@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
@@ -33,6 +32,8 @@ const History: React.FC = () => {
       items = items.filter(item => item.status === "active");
     } else if (activeTab === "used") {
       items = items.filter(item => item.status === "used");
+    } else if (activeTab === "waste") {
+      items = items.filter(item => item.status === "waste");
     }
     
     if (searchQuery) {
@@ -110,6 +111,7 @@ const History: React.FC = () => {
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="active">Active</TabsTrigger>
                 <TabsTrigger value="used">Used</TabsTrigger>
+                <TabsTrigger value="waste">Wasted</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -180,6 +182,9 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
   if (item.status === "used") {
     statusColor = "bg-gray-100 text-gray-600";
     statusText = "Used";
+  } else if (item.status === "waste") {
+    statusColor = "bg-red-100 text-red-800";
+    statusText = "Wasted";
   } else if (daysUntilExpiry < 0) {
     statusColor = "bg-red-100 text-red-800";
     statusText = "Expired";
@@ -187,6 +192,10 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
     statusColor = "bg-green-100 text-green-800";
     statusText = "Active";
   }
+
+  const preparerName = item.preparedByProfile?.first_name || item.preparedByProfile?.last_name
+    ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim()
+    : item.preparedBy;
   
   return (
     <Card className="overflow-hidden">
@@ -205,7 +214,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="flex items-center text-kitchen-600 text-sm">
               <User className="w-4 h-4 mr-2 text-kitchen-400" />
-              <span>Prepared by: {item.preparedBy}</span>
+              <span>Prepared by: {preparerName}</span>
             </div>
             
             <div className="flex items-center text-kitchen-600 text-sm">
