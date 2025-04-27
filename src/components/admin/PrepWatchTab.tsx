@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,7 @@ export interface PrepWatchRule {
   frequency: 'daily' | 'weekly' | 'monthly';
   check_hour: number;
   check_minute: number;
+  check_period?: 'AM' | 'PM';
   notify_email: string;
   restaurant_id?: string;
 }
@@ -42,25 +44,22 @@ export const PrepWatchTab = () => {
   const { data: prepWatchRules = [], isLoading } = useQuery({
     queryKey: ["prep-watch-rules", selectedRestaurant?.id],
     queryFn: async () => {
-      // Use the generic query method with type casting to avoid TypeScript errors
       const { data, error } = await supabase
-        .from('prep_watch_settings' as any)
+        .from('prep_watch_settings')
         .select("*")
         .eq("restaurant_id", selectedRestaurant?.id)
         .order("food_type");
 
       if (error) throw error;
-      // Cast the response to our defined interface
-      return data as unknown as PrepWatchRule[];
+      return data as PrepWatchRule[];
     },
     enabled: !!selectedRestaurant?.id,
   });
 
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
-      // Use the generic query method with type casting to avoid TypeScript errors
       const { error } = await supabase
-        .from('prep_watch_settings' as any)
+        .from('prep_watch_settings')
         .delete()
         .eq("id", id);
 
@@ -72,7 +71,7 @@ export const PrepWatchTab = () => {
     },
     onError: (error) => {
       toast.error("Failed to delete rule", {
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
       });
     },
   });
@@ -122,7 +121,7 @@ export const PrepWatchTab = () => {
                     <TableCell>{rule.minimum_count}</TableCell>
                     <TableCell className="capitalize">{rule.frequency}</TableCell>
                     <TableCell>
-                      {String(rule.check_hour).padStart(2, '0')}:{String(rule.check_minute).padStart(2, '0')}
+                      {rule.check_hour % 12 || 12}:{String(rule.check_minute).padStart(2, '0')} {rule.check_hour >= 12 ? 'PM' : 'AM'}
                     </TableCell>
                     <TableCell>{rule.notify_email}</TableCell>
                     <TableCell>
