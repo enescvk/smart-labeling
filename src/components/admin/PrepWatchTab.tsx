@@ -45,7 +45,7 @@ export const PrepWatchTab = () => {
     queryKey: ["prep-watch-rules", selectedRestaurant?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('prep_watch_settings')
+        .from('prep_watch_settings' as any)
         .select("*")
         .eq("restaurant_id", selectedRestaurant?.id)
         .order("food_type");
@@ -59,7 +59,7 @@ export const PrepWatchTab = () => {
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('prep_watch_settings')
+        .from('prep_watch_settings' as any)
         .delete()
         .eq("id", id);
 
