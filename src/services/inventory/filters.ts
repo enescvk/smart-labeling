@@ -31,8 +31,38 @@ export const getExpiringItems = async (restaurantId?: string | null): Promise<In
     return [];
   }
 
+  // Now get all the unique user IDs from the prepared_by field
+  const userIds = [...new Set(data.map(item => item.prepared_by))];
+  
+  // Fetch profile information for these users
+  const { data: profilesData, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, first_name, last_name")
+    .in("id", userIds);
+    
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError);
+    // Continue with the inventory data even if profiles can't be fetched
+  }
+  
+  // Create a map of user IDs to profile data for easier lookup
+  const profilesMap = {};
+  if (profilesData) {
+    profilesData.forEach(profile => {
+      profilesMap[profile.id] = profile;
+    });
+  }
+  
+  // Map the database items and add profile information
+  const items = data.map(item => {
+    return {
+      ...mapDatabaseItem(item),
+      preparedByProfile: profilesMap[item.prepared_by] || null
+    };
+  });
+
   console.log(`Found ${data?.length || 0} expiring items for restaurant ${restaurantId}`);
-  return data.map(mapDatabaseItem);
+  return items;
 };
 
 // Get expired items
@@ -59,8 +89,38 @@ export const getExpiredItems = async (restaurantId?: string | null): Promise<Inv
     return [];
   }
 
+  // Now get all the unique user IDs from the prepared_by field
+  const userIds = [...new Set(data.map(item => item.prepared_by))];
+  
+  // Fetch profile information for these users
+  const { data: profilesData, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, first_name, last_name")
+    .in("id", userIds);
+    
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError);
+    // Continue with the inventory data even if profiles can't be fetched
+  }
+  
+  // Create a map of user IDs to profile data for easier lookup
+  const profilesMap = {};
+  if (profilesData) {
+    profilesData.forEach(profile => {
+      profilesMap[profile.id] = profile;
+    });
+  }
+  
+  // Map the database items and add profile information
+  const items = data.map(item => {
+    return {
+      ...mapDatabaseItem(item),
+      preparedByProfile: profilesMap[item.prepared_by] || null
+    };
+  });
+
   console.log(`Found ${data?.length || 0} expired items for restaurant ${restaurantId}`);
-  return data.map(mapDatabaseItem);
+  return items;
 };
 
 // Get recently created items (in the last 7 days)
@@ -86,6 +146,36 @@ export const getRecentItems = async (restaurantId?: string | null): Promise<Inve
     return [];
   }
 
+  // Now get all the unique user IDs from the prepared_by field
+  const userIds = [...new Set(data.map(item => item.prepared_by))];
+  
+  // Fetch profile information for these users
+  const { data: profilesData, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, first_name, last_name")
+    .in("id", userIds);
+    
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError);
+    // Continue with the inventory data even if profiles can't be fetched
+  }
+  
+  // Create a map of user IDs to profile data for easier lookup
+  const profilesMap = {};
+  if (profilesData) {
+    profilesData.forEach(profile => {
+      profilesMap[profile.id] = profile;
+    });
+  }
+  
+  // Map the database items and add profile information
+  const items = data.map(item => {
+    return {
+      ...mapDatabaseItem(item),
+      preparedByProfile: profilesMap[item.prepared_by] || null
+    };
+  });
+
   console.log(`Found ${data?.length || 0} recent items for restaurant ${restaurantId}`);
-  return data.map(mapDatabaseItem);
+  return items;
 };
