@@ -15,15 +15,16 @@ interface RestaurantStore {
 export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
   selectedRestaurant: null,
   setSelectedRestaurant: (restaurant) => set({ selectedRestaurant: restaurant }),
+  
   loadFirstRestaurant: async () => {
     try {
       // Get the user's restaurants
       const restaurants = await getUserRestaurants();
       
       if (restaurants && restaurants.length > 0) {
-        // First try to get the default restaurant from local storage
+        // First try to get the default restaurant from the database
         const defaultRestaurantId = await get().getDefaultRestaurant();
-        console.log("Default restaurant ID from storage:", defaultRestaurantId);
+        console.log("Default restaurant ID from database:", defaultRestaurantId);
         
         if (defaultRestaurantId) {
           // Find the default restaurant in the list
@@ -47,31 +48,53 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
       console.error("Failed to load first restaurant:", error);
     }
   },
+  
   setDefaultRestaurant: async (restaurantId) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
       
-      const key = `default_restaurant_${user.id}`;
-      // Store the default restaurant preference in local storage
-      localStorage.setItem(key, restaurantId);
-      console.log("Default restaurant saved with key:", key, "value:", restaurantId);
-      return;
+      // Upsert the user's default restaurant preference
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({ 
+          user_id: user.id, 
+          default_restaurant_id: restaurantId 
+        }, { 
+          onConflict: 'user_id' 
+        });
+      
+      if (error) {
+        console.error("Failed to set default restaurant:", error);
+        throw error;
+      }
+      
+      console.log("Default restaurant saved for user:", user.id, "restaurant:", restaurantId);
     } catch (error) {
       console.error("Failed to set default restaurant:", error);
       throw error;
     }
   },
+  
   getDefaultRestaurant: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
-      const key = `default_restaurant_${user.id}`;
-      // Get the default restaurant from local storage
-      const defaultId = localStorage.getItem(key);
-      console.log("Retrieved default restaurant with key:", key, "value:", defaultId);
-      return defaultId;
+      // Fetch the user's default restaurant from the database
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('default_restaurant_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching default restaurant:", error);
+        return null;
+      }
+      
+      console.log("Retrieved default restaurant from database:", data?.default_restaurant_id);
+      return data?.default_restaurant_id;
     } catch (error) {
       console.error("Failed to get default restaurant:", error);
       return null;
