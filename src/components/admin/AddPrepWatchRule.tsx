@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -85,6 +84,10 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
 
   const addRule = useMutation({
     mutationFn: async (data: FormData) => {
+      if (!selectedRestaurant?.id) {
+        throw new Error("No restaurant selected");
+      }
+
       // Convert 12-hour format to 24-hour format
       let hour24 = data.check_hour;
       if (data.check_period === "PM" && data.check_hour !== 12) {
@@ -94,11 +97,16 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
       }
 
       const { error } = await supabase
-        .from('prep_watch_settings' as any)
+        .from('prep_watch_settings')
         .insert({
-          restaurant_id: selectedRestaurant?.id,
-          ...data,
-          check_hour: hour24, // Save in 24-hour format
+          restaurant_id: selectedRestaurant.id,
+          food_type: data.food_type,
+          minimum_count: data.minimum_count,
+          frequency: data.frequency,
+          check_hour: hour24,
+          check_minute: data.check_minute,
+          check_period: data.check_period,
+          notify_email: data.notify_email,
         });
 
       if (error) throw error;
@@ -110,8 +118,9 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
       onOpenChange(false);
     },
     onError: (error) => {
+      console.error("Error adding rule:", error);
       toast.error("Failed to add rule", {
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
       });
     },
     onSettled: () => {

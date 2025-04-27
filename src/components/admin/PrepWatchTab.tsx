@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,6 @@ import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
-// Define the interface for our PrepWatch rule
 export interface PrepWatchRule {
   id: string;
   food_type: string;
@@ -45,13 +43,13 @@ export const PrepWatchTab = () => {
     queryKey: ["prep-watch-rules", selectedRestaurant?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('prep_watch_settings' as any)
+        .from('prep_watch_settings')
         .select("*")
         .eq("restaurant_id", selectedRestaurant?.id)
         .order("food_type");
 
       if (error) throw error;
-      return (data as unknown) as PrepWatchRule[];
+      return data as PrepWatchRule[];
     },
     enabled: !!selectedRestaurant?.id,
   });
@@ -59,7 +57,7 @@ export const PrepWatchTab = () => {
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('prep_watch_settings' as any)
+        .from('prep_watch_settings')
         .delete()
         .eq("id", id);
 

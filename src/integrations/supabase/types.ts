@@ -53,6 +53,56 @@ export type Database = {
           },
         ]
       }
+      prep_watch_settings: {
+        Row: {
+          check_hour: number
+          check_minute: number
+          check_period: string | null
+          created_at: string
+          food_type: string
+          frequency: string
+          id: string
+          minimum_count: number
+          notify_email: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          check_hour: number
+          check_minute: number
+          check_period?: string | null
+          created_at?: string
+          food_type: string
+          frequency: string
+          id?: string
+          minimum_count: number
+          notify_email: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          check_hour?: number
+          check_minute?: number
+          check_period?: string | null
+          created_at?: string
+          food_type?: string
+          frequency?: string
+          id?: string
+          minimum_count?: number
+          notify_email?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_watch_settings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
