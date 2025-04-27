@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { PrepWatchRule } from "./PrepWatchTab"; // Import the type from PrepWatchTab
 
 const formSchema = z.object({
   food_type: z.string().min(1, "Food type is required"),
@@ -75,9 +76,9 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
 
   const addRule = useMutation({
     mutationFn: async (data: FormData) => {
-      // Using a raw insert approach to bypass type checking
+      // Use type assertion to bypass TypeScript type checking for the table name
       const { error } = await supabase
-        .from('prep_watch_settings')
+        .from('prep_watch_settings' as any)
         .insert({
           restaurant_id: selectedRestaurant?.id,
           ...data,

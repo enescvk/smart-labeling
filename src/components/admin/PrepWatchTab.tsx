@@ -23,12 +23,14 @@ import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
-interface PrepWatchRule {
+// Define the interface for our PrepWatch rule
+export interface PrepWatchRule {
   id: string;
   food_type: string;
   minimum_count: number;
   frequency: 'daily' | 'weekly' | 'monthly';
   notify_email: string;
+  restaurant_id?: string;
 }
 
 export const PrepWatchTab = () => {
@@ -39,24 +41,25 @@ export const PrepWatchTab = () => {
   const { data: prepWatchRules = [], isLoading } = useQuery({
     queryKey: ["prep-watch-rules", selectedRestaurant?.id],
     queryFn: async () => {
-      // Using the generic SQL query instead of the table name directly
+      // Use the generic query method with type casting to avoid TypeScript errors
       const { data, error } = await supabase
-        .from('prep_watch_settings')
+        .from('prep_watch_settings' as any)
         .select("*")
         .eq("restaurant_id", selectedRestaurant?.id)
         .order("food_type");
 
       if (error) throw error;
-      return data as PrepWatchRule[];
+      // Cast the response to our defined interface
+      return data as unknown as PrepWatchRule[];
     },
     enabled: !!selectedRestaurant?.id,
   });
 
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
-      // Using the generic SQL query instead of the table name directly
+      // Use the generic query method with type casting to avoid TypeScript errors
       const { error } = await supabase
-        .from('prep_watch_settings')
+        .from('prep_watch_settings' as any)
         .delete()
         .eq("id", id);
 
