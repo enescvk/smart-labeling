@@ -51,7 +51,7 @@ export const PrepWatchTab = () => {
         .order("food_type");
 
       if (error) throw error;
-      return data as PrepWatchRule[];
+      return (data as unknown) as PrepWatchRule[];
     },
     enabled: !!selectedRestaurant?.id,
   });
