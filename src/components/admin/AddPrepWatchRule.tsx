@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { PrepWatchRule } from "./PrepWatchTab";
+import { useAuth } from "@/context/AuthContext";
 
 const formSchema = z.object({
   food_type: z.string().min(1, "Food type is required"),
@@ -49,6 +50,7 @@ interface AddPrepWatchRuleProps {
 
 export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) => {
   const { selectedRestaurant } = useRestaurantStore();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,6 +61,7 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
       frequency: "daily",
       check_hour: 9,
       check_minute: 0,
+      notify_email: user?.email || '',
     },
   });
 
