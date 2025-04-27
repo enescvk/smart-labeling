@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -36,8 +37,9 @@ const formSchema = z.object({
   food_type: z.string().min(1, "Food type is required"),
   minimum_count: z.number().min(1, "Minimum count must be at least 1"),
   frequency: z.enum(["daily", "weekly", "monthly"]),
-  check_hour: z.number().min(0).max(23),
+  check_hour: z.number().min(1).max(12),
   check_minute: z.number().min(0).max(59),
+  check_period: z.enum(["AM", "PM"]),
   notify_email: z.string().email("Invalid email address"),
 });
 
@@ -61,6 +63,7 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
       frequency: "daily",
       check_hour: 9,
       check_minute: 0,
+      check_period: "AM",
       notify_email: user?.email || '',
     },
   });
@@ -82,11 +85,20 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
 
   const addRule = useMutation({
     mutationFn: async (data: FormData) => {
+      // Convert 12-hour format to 24-hour format
+      let hour24 = data.check_hour;
+      if (data.check_period === "PM" && data.check_hour !== 12) {
+        hour24 += 12;
+      } else if (data.check_period === "AM" && data.check_hour === 12) {
+        hour24 = 0;
+      }
+
       const { error } = await supabase
         .from('prep_watch_settings' as any)
         .insert({
           restaurant_id: selectedRestaurant?.id,
           ...data,
+          check_hour: hour24, // Save in 24-hour format
         });
 
       if (error) throw error;
@@ -200,12 +212,12 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                 name="check_hour"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Check Hour (24h)</FormLabel>
+                    <FormLabel>Hour (1-12)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        min={0}
-                        max={23}
+                        min={1}
+                        max={12}
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                       />
@@ -220,7 +232,7 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                 name="check_minute"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Check Minute</FormLabel>
+                    <FormLabel>Minute (0-59)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -230,6 +242,31 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="check_period"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>AM/PM</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
