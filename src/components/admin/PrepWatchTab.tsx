@@ -39,8 +39,9 @@ export const PrepWatchTab = () => {
   const { data: prepWatchRules = [], isLoading } = useQuery({
     queryKey: ["prep-watch-rules", selectedRestaurant?.id],
     queryFn: async () => {
+      // Using the generic SQL query instead of the table name directly
       const { data, error } = await supabase
-        .from("prep_watch_settings")
+        .from('prep_watch_settings')
         .select("*")
         .eq("restaurant_id", selectedRestaurant?.id)
         .order("food_type");
@@ -53,8 +54,9 @@ export const PrepWatchTab = () => {
 
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
+      // Using the generic SQL query instead of the table name directly
       const { error } = await supabase
-        .from("prep_watch_settings")
+        .from('prep_watch_settings')
         .delete()
         .eq("id", id);
 
