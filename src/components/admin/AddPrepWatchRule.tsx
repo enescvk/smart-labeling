@@ -35,7 +35,7 @@ import { PrepWatchRule } from "./PrepWatchTab"; // Import the type from PrepWatc
 const formSchema = z.object({
   food_type: z.string().min(1, "Food type is required"),
   minimum_count: z.number().min(1, "Minimum count must be at least 1"),
-  frequency: z.enum(["daily", "weekly", "monthly"]),
+  frequency: z.enum(["hourly", "daily", "weekly", "monthly"]),
   notify_email: z.string().email("Invalid email address"),
 });
 
@@ -179,6 +179,7 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>

@@ -28,7 +28,7 @@ export interface PrepWatchRule {
   id: string;
   food_type: string;
   minimum_count: number;
-  frequency: 'daily' | 'weekly' | 'monthly';
+  frequency: 'hourly' | 'daily' | 'weekly' | 'monthly';
   notify_email: string;
   restaurant_id?: string;
 }
