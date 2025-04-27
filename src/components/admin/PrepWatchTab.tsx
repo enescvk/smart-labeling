@@ -23,6 +23,14 @@ import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 
+interface PrepWatchRule {
+  id: string;
+  food_type: string;
+  minimum_count: number;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  notify_email: string;
+}
+
 export const PrepWatchTab = () => {
   const [showAddRule, setShowAddRule] = useState(false);
   const { selectedRestaurant } = useRestaurantStore();
@@ -38,7 +46,7 @@ export const PrepWatchTab = () => {
         .order("food_type");
 
       if (error) throw error;
-      return data;
+      return data as PrepWatchRule[];
     },
     enabled: !!selectedRestaurant?.id,
   });
