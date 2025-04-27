@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Package } from "lucide-react";
+import { Building, Package, Bell } from "lucide-react";
 import { AdminContainerTypes } from "@/components/admin/AdminContainerTypes";
 import { AdminFoodTypes } from "@/components/admin/AdminFoodTypes";
+import { PrepWatchTab } from "@/components/admin/PrepWatchTab";
 import { useAuth } from "@/context/AuthContext";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +84,10 @@ const Admin = () => {
               <Package className="h-4 w-4 mr-2" />
               Food Types
             </TabsTrigger>
+            <TabsTrigger value="prep-watch">
+              <Bell className="h-4 w-4 mr-2" />
+              PrepWatch
+            </TabsTrigger>
             <TabsTrigger value="restaurant-settings">
               <Building className="h-4 w-4 mr-2" />
               Restaurant Settings
@@ -94,6 +100,10 @@ const Admin = () => {
 
           <TabsContent value="food-types">
             <AdminFoodTypes />
+          </TabsContent>
+
+          <TabsContent value="prep-watch">
+            <PrepWatchTab />
           </TabsContent>
 
           <TabsContent value="restaurant-settings">
