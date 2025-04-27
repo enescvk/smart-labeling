@@ -31,6 +31,12 @@ const ScanBarcode: React.FC = () => {
       // Update the UI with the returned item data if available
       if (updatedItem) {
         console.log("Setting updated item with status:", updatedItem.status);
+        
+        // Important: Preserve the profile information if not returned by the update call
+        if (!updatedItem.preparedByProfile && foundItem?.preparedByProfile) {
+          updatedItem.preparedByProfile = foundItem.preparedByProfile;
+        }
+        
         setFoundItem(updatedItem);
       } else if (foundItem) {
         // If no item is returned, refresh from the database
