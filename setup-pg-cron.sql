@@ -30,3 +30,4 @@ SELECT
   next_run,
   status
 FROM cron.job;
+
