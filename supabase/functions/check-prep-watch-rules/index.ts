@@ -1,105 +1,119 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.3";
-
-// Define types for PrepWatch rule and inventory item
-interface PrepWatchRule {
-  id: string;
-  food_type: string;
-  minimum_count: number;
-  restaurant_id: string;
-  notify_email: string;
-}
-
-interface InventoryItem {
-  id: string;
-  product: string;
-  status: string;
-}
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface PrepWatchRule {
+  id: string;
+  food_type: string;
+  minimum_count: number;
+  restaurant_id: string;
+  notify_email: string;
+  check_hour: number;
+  check_minute: number;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client with URL and service role key from environment
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error("Missing Supabase URL or service role key");
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
-    console.log("Checking PrepWatch rules...");
+    console.log(`Checking PrepWatch rules at ${currentHour}:${currentMinute}`);
 
-    // Fetch all active PrepWatch rules
+    // Fetch all PrepWatch rules
     const { data: rules, error: rulesError } = await supabase
       .from("prep_watch_settings")
       .select("*");
 
-    if (rulesError) {
-      throw rulesError;
-    }
+    if (rulesError) throw rulesError;
 
     console.log(`Found ${rules.length} PrepWatch rules to check`);
     
     // Process each rule
     for (const rule of rules as PrepWatchRule[]) {
-      console.log(`Processing rule for ${rule.food_type}, minimum: ${rule.minimum_count}`);
-      
-      // Get active inventory items for this food type
-      const { data: items, error: itemsError } = await supabase
-        .from("inventory")
-        .select("id, product, status")
-        .eq("restaurant_id", rule.restaurant_id)
-        .eq("status", "active");
+      // Check if it's time to run this rule
+      if (rule.check_hour === currentHour && rule.check_minute === currentMinute) {
+        console.log(`Processing rule for ${rule.food_type}, minimum: ${rule.minimum_count}`);
         
-      if (itemsError) {
-        console.error(`Error fetching inventory for rule ${rule.id}:`, itemsError);
-        continue;
-      }
-      
-      // Filter items by food type (case-insensitive)
-      const matchingItems = (items || []).filter(item => 
-        item.product.toLowerCase() === rule.food_type.toLowerCase()
-      );
-      
-      const activeCount = matchingItems.length;
-      console.log(`Found ${activeCount} active ${rule.food_type} items, minimum required: ${rule.minimum_count}`);
-      
-      // If count is below minimum, create a notification and send an email
-      if (activeCount < rule.minimum_count) {
-        console.log(`Inventory level for ${rule.food_type} is below minimum threshold. Sending notification...`);
-        
-        // Create a notification record
-        const { error: notificationError } = await supabase
-          .from("notifications")
-          .insert({
-            restaurant_id: rule.restaurant_id,
-            title: "Low Inventory Alert",
-            message: `${rule.food_type} count (${activeCount}) is below the minimum requirement of ${rule.minimum_count}`,
-            type: "warning",
-            read: false,
-            link: "/history"
-          });
+        // Get active inventory items for this food type
+        const { data: items, error: itemsError } = await supabase
+          .from("inventory")
+          .select("id, product")
+          .eq("restaurant_id", rule.restaurant_id)
+          .eq("status", "active")
+          .eq("product", rule.food_type);
           
-        if (notificationError) {
-          console.error("Error creating notification:", notificationError);
-        } else {
-          console.log("Notification created successfully");
+        if (itemsError) {
+          console.error(`Error fetching inventory for rule ${rule.id}:`, itemsError);
+          continue;
         }
         
-        // Send email notification
-        await sendEmailNotification(rule, activeCount);
+        const activeCount = items?.length || 0;
+        console.log(`Found ${activeCount} active ${rule.food_type} items, minimum required: ${rule.minimum_count}`);
+        
+        // If count is below minimum, create a notification and send an email
+        if (activeCount < rule.minimum_count) {
+          console.log(`Inventory level for ${rule.food_type} is below minimum threshold. Sending notification...`);
+          
+          // Create a notification record
+          const { error: notificationError } = await supabase
+            .from("notifications")
+            .insert({
+              restaurant_id: rule.restaurant_id,
+              title: `Low Inventory Alert: ${rule.food_type}`,
+              message: `${rule.food_type} count (${activeCount}) is below the minimum requirement of ${rule.minimum_count}`,
+              type: "warning",
+              read: false,
+              link: "/history",
+              timestamp: new Date().toISOString()
+            });
+            
+          if (notificationError) {
+            console.error("Error creating notification:", notificationError);
+          } else {
+            console.log("Notification created successfully");
+          }
+          
+          // Send email notification
+          try {
+            await resend.emails.send({
+              from: "PrepWatch <onboarding@resend.dev>",
+              to: rule.notify_email,
+              subject: `Low Inventory Alert: ${rule.food_type}`,
+              html: `
+                <h1>Low Inventory Alert</h1>
+                <p>The current inventory level for ${rule.food_type} is below the minimum threshold:</p>
+                <ul>
+                  <li>Current Count: ${activeCount}</li>
+                  <li>Minimum Required: ${rule.minimum_count}</li>
+                </ul>
+                <p>Please prepare more items to maintain the required inventory level.</p>
+              `,
+            });
+            console.log(`Email notification sent to ${rule.notify_email}`);
+          } catch (emailError) {
+            console.error("Error sending email:", emailError);
+          }
+        }
       }
     }
     
@@ -121,39 +135,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Function to send email notification
-async function sendEmailNotification(rule: PrepWatchRule, currentCount: number) {
-  try {
-    // Call the send-prep-watch-notification edge function to send an email
-    const response = await fetch(
-      "https://htrstvloqgqvnvtiqfwa.functions.supabase.co/send-prep-watch-notification",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-        },
-        body: JSON.stringify({
-          restaurant_id: rule.restaurant_id,
-          food_type: rule.food_type,
-          current_count: currentCount,
-          minimum_count: rule.minimum_count,
-          notify_email: rule.notify_email
-        }),
-      }
-    );
-    
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to send email: ${error}`);
-    }
-    
-    console.log(`Email notification sent to ${rule.notify_email} for ${rule.food_type}`);
-    return true;
-  } catch (error) {
-    console.error("Error sending email notification:", error);
-    return false;
-  }
-}
-

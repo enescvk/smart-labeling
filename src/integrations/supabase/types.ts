@@ -53,6 +53,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          read: boolean
+          restaurant_id: string
+          timestamp: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean
+          restaurant_id: string
+          timestamp?: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean
+          restaurant_id?: string
+          timestamp?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       prep_watch_settings: {
         Row: {
           check_hour: number
