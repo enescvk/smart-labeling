@@ -16,6 +16,7 @@ interface PrepWatchRule {
   notify_email: string;
   check_hour: number;
   check_minute: number;
+  frequency: string;
 }
 
 serve(async (req) => {
@@ -37,7 +38,8 @@ serve(async (req) => {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
-    console.log(`Checking PrepWatch rules at ${currentHour}:${currentMinute}`);
+    console.log(`Running PrepWatch check at ${now.toISOString()}`);
+    console.log(`Current time: ${currentHour}:${currentMinute}`);
 
     // Fetch all PrepWatch rules
     const { data: rules, error: rulesError } = await supabase
@@ -48,11 +50,22 @@ serve(async (req) => {
 
     console.log(`Found ${rules.length} PrepWatch rules to check`);
     
+    // Log all rules for debugging
+    rules.forEach(rule => {
+      console.log(`Rule ID: ${rule.id}, Food: ${rule.food_type}, Hour: ${rule.check_hour}, Minute: ${rule.check_minute}`);
+    });
+    
     // Process each rule
     for (const rule of rules as PrepWatchRule[]) {
-      // Check if it's time to run this rule
-      if (rule.check_hour === currentHour && rule.check_minute === currentMinute) {
-        console.log(`Processing rule for ${rule.food_type}, minimum: ${rule.minimum_count}`);
+      // Expand the time check with a small window to account for scheduling delays
+      const hourMatches = rule.check_hour === currentHour;
+      const minuteInRange = Math.abs(rule.check_minute - currentMinute) <= 5; // Allow 5-minute window
+      
+      console.log(`Checking rule for ${rule.food_type}: scheduled for ${rule.check_hour}:${rule.check_minute}`);
+      console.log(`Hour match: ${hourMatches}, Minute in range: ${minuteInRange}`);
+      
+      if (hourMatches && minuteInRange) {
+        console.log(`Time condition met for rule ID ${rule.id} - ${rule.food_type}. Getting inventory...`);
         
         // Get active inventory items for this food type
         const { data: items, error: itemsError } = await supabase
@@ -72,10 +85,10 @@ serve(async (req) => {
         
         // If count is below minimum, create a notification and send an email
         if (activeCount < rule.minimum_count) {
-          console.log(`Inventory level for ${rule.food_type} is below minimum threshold. Sending notification...`);
+          console.log(`Inventory level for ${rule.food_type} is below minimum threshold (${activeCount}/${rule.minimum_count}). Creating notification...`);
           
           // Create a notification record
-          const { error: notificationError } = await supabase
+          const { data: notification, error: notificationError } = await supabase
             .from("notifications")
             .insert({
               restaurant_id: rule.restaurant_id,
@@ -85,17 +98,18 @@ serve(async (req) => {
               read: false,
               link: "/history",
               timestamp: new Date().toISOString()
-            });
+            })
+            .select();
             
           if (notificationError) {
             console.error("Error creating notification:", notificationError);
           } else {
-            console.log("Notification created successfully");
+            console.log("Notification created successfully:", notification);
           }
           
           // Send email notification
           try {
-            await resend.emails.send({
+            const emailResponse = await resend.emails.send({
               from: "PrepWatch <onboarding@resend.dev>",
               to: rule.notify_email,
               subject: `Low Inventory Alert: ${rule.food_type}`,
@@ -109,11 +123,15 @@ serve(async (req) => {
                 <p>Please prepare more items to maintain the required inventory level.</p>
               `,
             });
-            console.log(`Email notification sent to ${rule.notify_email}`);
+            console.log(`Email notification sent to ${rule.notify_email}:`, emailResponse);
           } catch (emailError) {
             console.error("Error sending email:", emailError);
           }
+        } else {
+          console.log(`Inventory level for ${rule.food_type} is sufficient (${activeCount}/${rule.minimum_count}). No notification needed.`);
         }
+      } else {
+        console.log(`Time condition not met for rule ID ${rule.id} - ${rule.food_type}. Skipping.`);
       }
     }
     
