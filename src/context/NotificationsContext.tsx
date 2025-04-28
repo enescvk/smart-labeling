@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useRestaurantStore } from '@/stores/restaurantStore';
 import { toast } from 'sonner';
 
@@ -45,8 +45,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const fetchNotifications = async () => {
       try {
+        // Use the 'from' method with a type assertion to specify the table
         const { data, error } = await supabase
-          .from('notifications')
+          .from('notifications' as any)
           .select('*')
           .eq('restaurant_id', selectedRestaurant.id)
           .order('timestamp', { ascending: false });
@@ -54,7 +55,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         if (error) throw error;
         
         // Transform database notifications to match our Notification interface
-        const formattedNotifications = data.map(item => ({
+        const formattedNotifications = data.map((item: any) => ({
           id: item.id,
           title: item.title,
           message: item.message,
@@ -134,7 +135,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       // Update in the database
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as any)
         .update({ read: true })
         .eq('id', id);
         
@@ -155,7 +156,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       
       // Update all notifications for this restaurant in the database
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as any)
         .update({ read: true })
         .eq('restaurant_id', selectedRestaurant.id)
         .eq('read', false);
@@ -173,7 +174,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       // Delete from the database
       const { error } = await supabase
-        .from('notifications')
+        .from('notifications' as any)
         .delete()
         .eq('id', id);
         
