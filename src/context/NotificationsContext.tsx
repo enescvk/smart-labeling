@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantStore } from '@/stores/restaurantStore';
 import { toast } from 'sonner';
 import { PrepWatchRule } from '@/components/admin/PrepWatchTab';
+import { getActiveInventoryItems } from '@/services/inventory/queries';
 
 export interface Notification {
   id: string;
@@ -35,6 +36,7 @@ export const useNotifications = () => {
 
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [lastCheck, setLastCheck] = useState<Record<string, Date>>({});
   const { selectedRestaurant } = useRestaurantStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -51,24 +53,43 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .eq('restaurant_id', selectedRestaurant.id);
 
       if (rulesError) throw rulesError;
+      
+      console.log('Checking PrepWatch rules:', rules);
 
       // For each rule, check active inventory counts
       for (const rule of rules as PrepWatchRule[]) {
         const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
         const ruleHour = rule.check_hour;
         const ruleMinute = rule.check_minute;
         
-        // Get the current time in the local timezone
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
+        console.log(`Checking rule for ${rule.food_type}: current time ${currentHour}:${currentMinute}, rule time ${ruleHour}:${ruleMinute}`);
+
+        // Create a unique key for this rule to track last check time
+        const ruleKey = `${rule.id}-${rule.food_type}`;
+        const lastCheckTime = lastCheck[ruleKey];
+        const today = new Date().setHours(0, 0, 0, 0);
         
-        // Simple check: if the current time matches or just passed the rule's check time
-        // In a real app, you'd want more sophisticated time checking with proper timezone handling
-        if (currentHour === ruleHour && currentMinute >= ruleMinute) {
-          // Only check within 10 minutes of the scheduled time to avoid duplicate checks
-          if (currentMinute < ruleMinute + 10) {
-            await checkRuleCondition(rule);
-          }
+        // Check if we should verify this rule now
+        const shouldCheck = (
+          // Current time matches or just passed the rule time
+          (currentHour === ruleHour && currentMinute >= ruleMinute) &&
+          // And we haven't checked it today or it's been more than 23 hours since last check
+          (!lastCheckTime || 
+           new Date(lastCheckTime).setHours(0, 0, 0, 0) !== today || 
+           (now.getTime() - lastCheckTime.getTime()) > 23 * 60 * 60 * 1000)
+        );
+        
+        if (shouldCheck) {
+          console.log(`Time to check rule for ${rule.food_type}`);
+          await checkRuleCondition(rule);
+          
+          // Update last check time for this rule
+          setLastCheck(prev => ({
+            ...prev,
+            [ruleKey]: new Date()
+          }));
         }
       }
     } catch (error) {
@@ -79,17 +100,18 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Check a specific rule's condition against inventory
   const checkRuleCondition = async (rule: PrepWatchRule) => {
     try {
-      // Count active inventory items of the specific food type
-      const { data: items, error: itemsError } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('restaurant_id', selectedRestaurant?.id)
-        .eq('product', rule.food_type)
-        .eq('status', 'active');
-
-      if (itemsError) throw itemsError;
+      console.log(`Checking condition for rule: ${rule.food_type}, min: ${rule.minimum_count}`);
       
-      const activeCount = items?.length || 0;
+      // Get active inventory items directly using the inventory service
+      const items = await getActiveInventoryItems(selectedRestaurant?.id);
+      
+      // Filter items by the specific food type
+      const matchingItems = items.filter(item => 
+        item.product.toLowerCase() === rule.food_type.toLowerCase()
+      );
+      
+      const activeCount = matchingItems.length;
+      console.log(`Found ${activeCount} active ${rule.food_type} items, minimum required: ${rule.minimum_count}`);
       
       // If count is below minimum, create a notification
       if (activeCount < rule.minimum_count) {
@@ -110,20 +132,25 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           description: newNotification.message,
           duration: 10000,
         });
+        
+        console.log('Created notification for low inventory');
       }
     } catch (error) {
       console.error('Error checking rule condition:', error);
     }
   };
 
+  // Run an initial check when the component mounts or restaurant changes
+  useEffect(() => {
+    if (selectedRestaurant?.id) {
+      checkInventoryLevels();
+    }
+  }, [selectedRestaurant?.id]);
+
   // Check inventory levels every minute
   useEffect(() => {
     if (!selectedRestaurant?.id) return;
     
-    // Check immediately on load
-    checkInventoryLevels();
-    
-    // Then check every minute
     const intervalId = setInterval(checkInventoryLevels, 60000);
     
     return () => clearInterval(intervalId);
