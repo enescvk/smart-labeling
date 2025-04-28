@@ -64,8 +64,11 @@ serve(async (req) => {
       console.log(`Checking rule for ${rule.food_type}: scheduled for ${rule.check_hour}:${rule.check_minute}`);
       console.log(`Hour match: ${hourMatches}, Minute in range: ${minuteInRange}`);
       
-      if (hourMatches && minuteInRange) {
-        console.log(`Time condition met for rule ID ${rule.id} - ${rule.food_type}. Getting inventory...`);
+      // FOR TESTING: Set to true to force processing all rules regardless of time
+      const forceProcess = true;
+      
+      if (hourMatches && minuteInRange || forceProcess) {
+        console.log(`Processing rule ID ${rule.id} - ${rule.food_type}. Getting inventory...`);
         
         // Get active inventory items for this food type
         const { data: items, error: itemsError } = await supabase
@@ -83,22 +86,29 @@ serve(async (req) => {
         const activeCount = items?.length || 0;
         console.log(`Found ${activeCount} active ${rule.food_type} items, minimum required: ${rule.minimum_count}`);
         
+        // FOR TESTING: Set to true to force notification creation regardless of count
+        const forceNotification = true;
+        
         // If count is below minimum, create a notification and send an email
-        if (activeCount < rule.minimum_count) {
-          console.log(`Inventory level for ${rule.food_type} is below minimum threshold (${activeCount}/${rule.minimum_count}). Creating notification...`);
+        if (activeCount < rule.minimum_count || forceNotification) {
+          console.log(`Creating notification for ${rule.food_type} (${activeCount}/${rule.minimum_count})...`);
           
           // Create a notification record
+          const notificationData = {
+            restaurant_id: rule.restaurant_id,
+            title: `Low Inventory Alert: ${rule.food_type}`,
+            message: `${rule.food_type} count (${activeCount}) is below the minimum requirement of ${rule.minimum_count}`,
+            type: "warning",
+            read: false,
+            link: "/history",
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log("Notification data to insert:", notificationData);
+          
           const { data: notification, error: notificationError } = await supabase
             .from("notifications")
-            .insert({
-              restaurant_id: rule.restaurant_id,
-              title: `Low Inventory Alert: ${rule.food_type}`,
-              message: `${rule.food_type} count (${activeCount}) is below the minimum requirement of ${rule.minimum_count}`,
-              type: "warning",
-              read: false,
-              link: "/history",
-              timestamp: new Date().toISOString()
-            })
+            .insert(notificationData)
             .select();
             
           if (notificationError) {
