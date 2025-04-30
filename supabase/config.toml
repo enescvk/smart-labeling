@@ -1,9 +1,2 @@
 
 project_id = "htrstvloqgqvnvtiqfwa"
-
-[functions.check-prep-watch-rules]
-verify_jwt = false
-
-[functions.send-prep-watch-notification]
-verify_jwt = false
-
