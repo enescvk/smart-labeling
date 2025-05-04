@@ -41,8 +41,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Using setTimeout to prevent potential deadlocks with Supabase auth
           setTimeout(() => {
             console.log("Loading first restaurant after sign in");
-            loadFirstRestaurant().then(() => {
-              console.log("First restaurant loaded after sign in");
+            loadFirstRestaurant().catch(err => {
+              console.error("Error loading first restaurant:", err);
+              toast({
+                title: "Error loading restaurant",
+                description: "Please try again or contact support",
+                variant: "destructive",
+              });
             });
             toast({
               title: "Signed in successfully",
@@ -70,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    // Get the initial session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Existing session:", currentSession);
       setSession(currentSession);
@@ -78,8 +84,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentSession?.user) {
         setTimeout(() => {
           console.log("Loading first restaurant for existing session");
-          loadFirstRestaurant().then(() => {
-            console.log("First restaurant loaded for existing session");
+          loadFirstRestaurant().catch(err => {
+            console.error("Error loading first restaurant:", err);
+            // Don't show error toast on initial load to avoid confusing the user
+            // They'll see loading state instead
           });
         }, 0);
       }

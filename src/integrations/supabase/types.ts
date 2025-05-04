@@ -367,12 +367,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      job_status: {
+        Row: {
+          active: boolean | null
+          command: string | null
+          database: string | null
+          jobid: number | null
+          jobname: string | null
+          nodename: string | null
+          nodeport: number | null
+          schedule: string | null
+          username: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          command?: string | null
+          database?: string | null
+          jobid?: number | null
+          jobname?: string | null
+          nodename?: string | null
+          nodeport?: number | null
+          schedule?: string | null
+          username?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          command?: string | null
+          database?: string | null
+          jobid?: number | null
+          jobname?: string | null
+          nodename?: string | null
+          nodeport?: number | null
+          schedule?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_is_restaurant_admin: {
         Args: { restaurant_id: string; user_id?: string }
         Returns: boolean
+      }
+      check_prep_watch_rules: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       check_restaurant_membership: {
         Args: { restaurant_id: string; user_id?: string }

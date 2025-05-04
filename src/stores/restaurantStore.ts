@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Restaurant } from '@/services/restaurants/types';
 import { getUserRestaurants } from '@/services/restaurants/restaurantService';
@@ -6,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface RestaurantStore {
   selectedRestaurant: Restaurant | null;
+  isLoading: boolean;
   setSelectedRestaurant: (restaurant: Restaurant | null) => void;
   loadFirstRestaurant: () => Promise<void>;
   setDefaultRestaurant: (restaurantId: string) => Promise<void>;
@@ -14,10 +14,14 @@ interface RestaurantStore {
 
 export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
   selectedRestaurant: null,
+  isLoading: false,
   setSelectedRestaurant: (restaurant) => set({ selectedRestaurant: restaurant }),
   
   loadFirstRestaurant: async () => {
     try {
+      set({ isLoading: true });
+      console.log("Restaurant store: Loading first restaurant");
+      
       // Get the user's restaurants
       const restaurants = await getUserRestaurants();
       
@@ -31,7 +35,7 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
           const defaultRestaurant = restaurants.find(r => r.id === defaultRestaurantId);
           if (defaultRestaurant) {
             console.log("Found and setting default restaurant:", defaultRestaurant.name);
-            set({ selectedRestaurant: defaultRestaurant });
+            set({ selectedRestaurant: defaultRestaurant, isLoading: false });
             return;
           } else {
             console.log("Default restaurant not found among user restaurants, ID was:", defaultRestaurantId);
@@ -40,12 +44,15 @@ export const useRestaurantStore = create<RestaurantStore>((set, get) => ({
         
         // If no default restaurant or not found, use the first one
         console.log("Using first restaurant as default:", restaurants[0].name);
-        set({ selectedRestaurant: restaurants[0] });
+        set({ selectedRestaurant: restaurants[0], isLoading: false });
       } else {
         console.log("No restaurants found for user");
+        set({ isLoading: false });
       }
     } catch (error) {
       console.error("Failed to load first restaurant:", error);
+      set({ isLoading: false });
+      throw error;
     }
   },
   

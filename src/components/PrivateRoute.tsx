@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
@@ -24,9 +25,18 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const { selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant } = useRestaurantStore();
 
   useEffect(() => {
+    // Add a timeout to prevent infinite loading state
+    const timeoutId = setTimeout(() => {
+      if (isCheckingRestaurant && user) {
+        console.log("Restaurant check timed out, forcing completion");
+        setIsCheckingRestaurant(false);
+      }
+    }, 5000); // 5 seconds timeout
+    
     const checkUserRestaurant = async () => {
       try {
         if (user) {
+          console.log("Checking user restaurant for user:", user.id);
           // Check if the user has any restaurants
           const restaurants = await getUserRestaurants();
           
@@ -45,11 +55,12 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
                 description: error.message || "Please try again or contact support."
               });
             }
-          } else {
-            setHasRestaurant(restaurants.length > 0);
+          } else if (restaurants.length > 0) {
+            console.log("User has", restaurants.length, "restaurants");
+            setHasRestaurant(true);
             
             // Auto-select the default restaurant if available
-            if (restaurants.length > 0) {
+            if (!selectedRestaurant) {
               const defaultId = await getDefaultRestaurant();
               console.log("Checking for default restaurant in PrivateRoute:", defaultId);
               
@@ -66,6 +77,8 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
                 await loadFirstRestaurant();
               }
             }
+          } else {
+            console.log("No restaurants found for user");
           }
 
           // Check admin status if there's a selected restaurant
@@ -98,21 +111,34 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     } else if (!isLoading && !user) {
       setIsCheckingRestaurant(false);
     }
+    
+    return () => clearTimeout(timeoutId);
   }, [user, isLoading, selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant]);
 
-  if (isLoading || (user && isCheckingRestaurant)) {
+  if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <Spinner size="lg" />
         <span className="ml-2">
-          {isLoading ? "Checking authentication..." : "Setting up your restaurant..."}
+          Checking authentication...
         </span>
       </div>
     );
   }
-
+  
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} />;
+  }
+  
+  if (isCheckingRestaurant) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Spinner size="lg" />
+        <span className="ml-2">
+          Setting up your restaurant...
+        </span>
+      </div>
+    );
   }
 
   if (requiresRestaurant && !hasRestaurant) {
