@@ -1,18 +1,18 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Calendar, Clock, User, CheckCircle2, XCircle, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { getInventoryItems, InventoryItem } from "../services/inventory";
 import { useQuery } from "@tanstack/react-query";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchFilters } from "@/components/history/SearchFilters";
+import { InventoryTable } from "@/components/history/InventoryTable";
+import { PaginationControls } from "@/components/history/PaginationControls";
+import { EmptyState } from "@/components/history/EmptyState";
 
 const History: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -120,21 +120,6 @@ const History: React.FC = () => {
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
-  };
-
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -174,45 +159,14 @@ const History: React.FC = () => {
             </Button>
           </header>
           
-          <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-            <div className="flex w-full md:w-auto md:flex-1 space-x-2">
-              <div className="relative w-full max-w-[150px]">
-                <Select 
-                  value={searchColumn} 
-                  onValueChange={setSearchColumn}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Search by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="product">Product</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="barcode">Barcode</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-kitchen-400" size={18} />
-                <Input
-                  type="search"
-                  placeholder={`Search by ${searchColumn}...`}
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="used">Used</TabsTrigger>
-                <TabsTrigger value="waste">Wasted</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          <SearchFilters 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchColumn={searchColumn}
+            setSearchColumn={setSearchColumn}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
           
           {isLoading ? (
             <div className="space-y-4">
@@ -238,154 +192,20 @@ const History: React.FC = () => {
               </p>
             </div>
           ) : filteredItems.length > 0 ? (
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="rounded-md border"
-            >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Barcode</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Prepared By</TableHead>
-                    <TableHead>Prepared Date</TableHead>
-                    <TableHead>Expiry Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginate(filteredItems).map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.product}</TableCell>
-                      <TableCell className="font-mono text-xs">{item.id}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={item.status} expiryDate={item.expiryDate} />
-                      </TableCell>
-                      <TableCell>
-                        {item.preparedByProfile?.first_name 
-                          ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim()
-                          : item.preparedBy}
-                      </TableCell>
-                      <TableCell>{item.preparedDate}</TableCell>
-                      <TableCell>{item.expiryDate}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center py-4">
-                  <Pagination>
-                    <PaginationContent>
-                      {currentPage === 1 ? (
-                        <PaginationItem>
-                          <Button 
-                            variant="outline" 
-                            size="default" 
-                            className="gap-1 pl-2.5"
-                            disabled={true}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span>Previous</span>
-                          </Button>
-                        </PaginationItem>
-                      ) : (
-                        <PaginationItem>
-                          <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
-                        </PaginationItem>
-                      )}
-                      
-                      {Array.from({ length: totalPages }).map((_, i) => (
-                        <PaginationItem key={i}>
-                          <PaginationLink
-                            isActive={currentPage === i + 1}
-                            onClick={() => setCurrentPage(i + 1)}
-                          >
-                            {i + 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )).filter((_, i) => {
-                        // Only show 5 pages max, with current page in the middle if possible
-                        const min = Math.max(0, currentPage - 3);
-                        const max = Math.min(totalPages - 1, currentPage + 1);
-                        return i >= min && i <= max;
-                      })}
-                      
-                      {currentPage === totalPages ? (
-                        <PaginationItem>
-                          <Button 
-                            variant="outline" 
-                            size="default" 
-                            className="gap-1 pr-2.5"
-                            disabled={true}
-                          >
-                            <span>Next</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </PaginationItem>
-                      ) : (
-                        <PaginationItem>
-                          <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
-                        </PaginationItem>
-                      )}
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </motion.div>
+            <>
+              <InventoryTable items={paginatedItems} />
+              <PaginationControls 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                setCurrentPage={setCurrentPage} 
+              />
+            </>
           ) : (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 mx-auto text-kitchen-300 mb-4" />
-              <h3 className="text-xl font-medium text-kitchen-800 mb-2">No items found</h3>
-              <p className="text-kitchen-500">
-                {searchQuery ? `No items match your "${searchQuery}" search` : "Your inventory history will appear here"}
-              </p>
-            </div>
+            <EmptyState searchQuery={searchQuery} />
           )}
         </motion.div>
       </div>
     </Layout>
-  );
-};
-
-interface StatusBadgeProps {
-  status: string;
-  expiryDate: string;
-}
-
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status, expiryDate }) => {
-  const today = new Date();
-  const expiry = new Date(expiryDate);
-  const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  
-  let bgColor = "";
-  let textColor = "";
-  let statusText = "";
-  
-  if (status === "used") {
-    bgColor = "bg-gray-100";
-    textColor = "text-gray-600";
-    statusText = "Used";
-  } else if (status === "waste") {
-    bgColor = "bg-red-100";
-    textColor = "text-red-800";
-    statusText = "Wasted";
-  } else if (daysUntilExpiry < 0) {
-    bgColor = "bg-red-100";
-    textColor = "text-red-800";
-    statusText = "Expired";
-  } else {
-    bgColor = "bg-green-100";
-    textColor = "text-green-800";
-    statusText = "Active";
-  }
-
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
-      {statusText}
-    </span>
   );
 };
 
