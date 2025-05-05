@@ -1,18 +1,25 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Barcode, Calendar, Clock, User, CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, FileText, Calendar, Clock, User, CheckCircle2, XCircle, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { getInventoryItems, InventoryItem } from "../services/inventory";
 import { useQuery } from "@tanstack/react-query";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 const History: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const { selectedRestaurant } = useRestaurantStore();
   const restaurantId = selectedRestaurant?.id;
@@ -50,8 +57,60 @@ const History: React.FC = () => {
     );
     
     setFilteredItems(items);
+    setCurrentPage(1);
   }, [activeTab, searchQuery, inventoryItems]);
   
+  const paginate = (items: InventoryItem[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return items.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  const paginatedItems = paginate(filteredItems);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const exportToCSV = () => {
+    try {
+      // Format all filtered items for CSV export
+      const csvData = filteredItems.map(item => ({
+        ID: item.id,
+        Product: item.product,
+        "Prepared By": item.preparedByProfile?.first_name 
+          ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim()
+          : item.preparedBy,
+        "Prepared Date": item.preparedDate,
+        "Expiry Date": item.expiryDate,
+        Status: item.status,
+      }));
+      
+      // Convert to CSV
+      const headers = Object.keys(csvData[0] || {}).join(',');
+      const rows = csvData.map(row => 
+        Object.values(row)
+          .map(value => `"${String(value).replace(/"/g, '""')}"`)
+          .join(',')
+      );
+      const csv = [headers, ...rows].join('\n');
+      
+      // Create and download file
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const filename = `inventory-history-${new Date().toISOString().slice(0, 10)}.csv`;
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("CSV file downloaded successfully");
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      toast.error("Failed to export CSV file");
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -75,23 +134,35 @@ const History: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <header className="mb-8">
-            <motion.h1 
-              className="text-3xl font-bold tracking-tight text-kitchen-900"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+          <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <motion.h1 
+                className="text-3xl font-bold tracking-tight text-kitchen-900"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                Label History
+              </motion.h1>
+              <motion.p 
+                className="mt-2 text-kitchen-500"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                View and search your complete inventory history
+              </motion.p>
+            </div>
+            
+            <Button 
+              onClick={exportToCSV} 
+              variant="outline"
+              className="mt-4 sm:mt-0 sm:ml-4"
+              disabled={filteredItems.length === 0}
             >
-              Label History
-            </motion.h1>
-            <motion.p 
-              className="mt-2 text-kitchen-500"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              View and search your complete inventory history
-            </motion.p>
+              <Download className="mr-2 h-4 w-4" />
+              Export to CSV
+            </Button>
           </header>
           
           <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
@@ -141,20 +212,83 @@ const History: React.FC = () => {
             </div>
           ) : filteredItems.length > 0 ? (
             <motion.div 
-              className="space-y-4"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
+              className="rounded-md border"
             >
-              {filteredItems.map((item, index) => (
-                <motion.div key={item.id} variants={itemVariants}>
-                  <HistoryItem item={item} />
-                </motion.div>
-              ))}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Barcode</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prepared By</TableHead>
+                    <TableHead>Prepared Date</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.product}</TableCell>
+                      <TableCell className="font-mono text-xs">{item.id}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={item.status} expiryDate={item.expiryDate} />
+                      </TableCell>
+                      <TableCell>
+                        {item.preparedByProfile?.first_name 
+                          ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim()
+                          : item.preparedBy}
+                      </TableCell>
+                      <TableCell>{item.preparedDate}</TableCell>
+                      <TableCell>{item.expiryDate}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center py-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            isActive={currentPage === i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )).filter((_, i) => {
+                        // Only show 5 pages max, with current page in the middle if possible
+                        const min = Math.max(0, currentPage - 3);
+                        const max = Math.min(totalPages - 1, currentPage + 1);
+                        return i >= min && i <= max;
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </motion.div>
           ) : (
             <div className="text-center py-12">
-              <Barcode className="h-12 w-12 mx-auto text-kitchen-300 mb-4" />
+              <FileText className="h-12 w-12 mx-auto text-kitchen-300 mb-4" />
               <h3 className="text-xl font-medium text-kitchen-800 mb-2">No items found</h3>
               <p className="text-kitchen-500">
                 {searchQuery ? "Try a different search term" : "Your inventory history will appear here"}
@@ -167,73 +301,42 @@ const History: React.FC = () => {
   );
 };
 
-interface HistoryItemProps {
-  item: InventoryItem;
+interface StatusBadgeProps {
+  status: string;
+  expiryDate: string;
 }
 
-const HistoryItem: React.FC<HistoryItemProps> = ({ item }) => {
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status, expiryDate }) => {
   const today = new Date();
-  const expiryDate = new Date(item.expiryDate);
-  const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const expiry = new Date(expiryDate);
+  const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   
-  let statusColor = "";
+  let bgColor = "";
+  let textColor = "";
   let statusText = "";
   
-  if (item.status === "used") {
-    statusColor = "bg-gray-100 text-gray-600";
+  if (status === "used") {
+    bgColor = "bg-gray-100";
+    textColor = "text-gray-600";
     statusText = "Used";
-  } else if (item.status === "waste") {
-    statusColor = "bg-red-100 text-red-800";
+  } else if (status === "waste") {
+    bgColor = "bg-red-100";
+    textColor = "text-red-800";
     statusText = "Wasted";
   } else if (daysUntilExpiry < 0) {
-    statusColor = "bg-red-100 text-red-800";
+    bgColor = "bg-red-100";
+    textColor = "text-red-800";
     statusText = "Expired";
   } else {
-    statusColor = "bg-green-100 text-green-800";
+    bgColor = "bg-green-100";
+    textColor = "text-green-800";
     statusText = "Active";
   }
 
-  const preparerName = item.preparedByProfile?.first_name || item.preparedByProfile?.last_name
-    ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim()
-    : item.preparedBy;
-  
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-col md:flex-row md:items-center">
-        <div className="flex-1 p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium text-lg text-kitchen-900">{item.product}</h3>
-              <p className="text-kitchen-500 text-sm mt-1">Barcode: {item.id}</p>
-            </div>
-            <span className={`kitchen-chip ${statusColor}`}>
-              {statusText}
-            </span>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="flex items-center text-kitchen-600 text-sm">
-              <User className="w-4 h-4 mr-2 text-kitchen-400" />
-              <span>Prepared by: {preparerName}</span>
-            </div>
-            
-            <div className="flex items-center text-kitchen-600 text-sm">
-              <Calendar className="w-4 h-4 mr-2 text-kitchen-400" />
-              <span>Prepared: {item.preparedDate}</span>
-            </div>
-            
-            <div className="flex items-center text-kitchen-600 text-sm">
-              <Clock className="w-4 h-4 mr-2 text-kitchen-400" />
-              <span>Expires: {item.expiryDate}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className={`w-full md:w-2 md:h-full ${statusColor.includes("red") ? "bg-red-400" : statusColor.includes("green") ? "bg-green-400" : "bg-gray-300"}`}>
-          {/* Status indicator bar */}
-        </div>
-      </div>
-    </Card>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+      {statusText}
+    </span>
   );
 };
 
