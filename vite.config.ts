@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    allowedHosts: ["2ef39629-070f-4848-8c4a-f69c022b1480.lovableproject.com", "localhost"]
+    allowedHosts: ["2ef39629-070f-4848-8c4a-f69c022b1480.lovableproject.com", "localhost", "smart-labeling.lovable.app"]
   },
   plugins: [
     react(),
