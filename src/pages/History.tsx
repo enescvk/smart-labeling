@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
@@ -13,10 +12,12 @@ import { useRestaurantStore } from "@/stores/restaurantStore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const History: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchColumn, setSearchColumn] = useState("all");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -45,11 +46,25 @@ const History: React.FC = () => {
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      items = items.filter(item => 
-        item.product.toLowerCase().includes(query) ||
-        item.preparedBy.toLowerCase().includes(query) ||
-        item.id.toLowerCase().includes(query)
-      );
+      
+      if (searchColumn === "all") {
+        items = items.filter(item => 
+          item.product.toLowerCase().includes(query) ||
+          item.preparedBy.toLowerCase().includes(query) ||
+          item.id.toLowerCase().includes(query)
+        );
+      } else if (searchColumn === "product") {
+        items = items.filter(item => item.product.toLowerCase().includes(query));
+      } else if (searchColumn === "staff") {
+        items = items.filter(item => {
+          const preparedByName = item.preparedByProfile
+            ? `${item.preparedByProfile.first_name || ''} ${item.preparedByProfile.last_name || ''}`.trim().toLowerCase()
+            : item.preparedBy.toLowerCase();
+          return preparedByName.includes(query);
+        });
+      } else if (searchColumn === "barcode") {
+        items = items.filter(item => item.id.toLowerCase().includes(query));
+      }
     }
     
     items.sort((a, b) => 
@@ -58,7 +73,7 @@ const History: React.FC = () => {
     
     setFilteredItems(items);
     setCurrentPage(1);
-  }, [activeTab, searchQuery, inventoryItems]);
+  }, [activeTab, searchQuery, searchColumn, inventoryItems]);
   
   const paginate = (items: InventoryItem[]) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -166,15 +181,34 @@ const History: React.FC = () => {
           </header>
           
           <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-            <div className="relative max-w-md w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-kitchen-400" size={18} />
-              <Input
-                type="search"
-                placeholder="Search by product, staff, or barcode..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="flex w-full md:w-auto md:flex-1 space-x-2">
+              <div className="relative w-full max-w-[150px]">
+                <Select 
+                  value={searchColumn} 
+                  onValueChange={setSearchColumn}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Search by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Fields</SelectItem>
+                    <SelectItem value="product">Product</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="barcode">Barcode</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-kitchen-400" size={18} />
+                <Input
+                  type="search"
+                  placeholder={`Search by ${searchColumn === 'all' ? 'any field' : searchColumn}...`}
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
@@ -229,7 +263,7 @@ const History: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedItems.map((item) => (
+                  {paginate(filteredItems).map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.product}</TableCell>
                       <TableCell className="font-mono text-xs">{item.id}</TableCell>
@@ -252,7 +286,6 @@ const History: React.FC = () => {
                 <div className="flex items-center justify-center py-4">
                   <Pagination>
                     <PaginationContent>
-                      {/* Fix 1: Use Button component for Previous when on first page */}
                       {currentPage === 1 ? (
                         <PaginationItem>
                           <Button 
@@ -287,7 +320,6 @@ const History: React.FC = () => {
                         return i >= min && i <= max;
                       })}
                       
-                      {/* Fix 2: Use Button component for Next when on last page */}
                       {currentPage === totalPages ? (
                         <PaginationItem>
                           <Button 
@@ -315,7 +347,7 @@ const History: React.FC = () => {
               <FileText className="h-12 w-12 mx-auto text-kitchen-300 mb-4" />
               <h3 className="text-xl font-medium text-kitchen-800 mb-2">No items found</h3>
               <p className="text-kitchen-500">
-                {searchQuery ? "Try a different search term" : "Your inventory history will appear here"}
+                {searchQuery ? `No items match your "${searchQuery}" search` : "Your inventory history will appear here"}
               </p>
             </div>
           )}
