@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Calendar, Clock, User, CheckCircle2, XCircle, Download } from "lucide-react";
+import { Search, FileText, Calendar, Clock, User, CheckCircle2, XCircle, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { getInventoryItems, InventoryItem } from "../services/inventory";
 import { useQuery } from "@tanstack/react-query";
