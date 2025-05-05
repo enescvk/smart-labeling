@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRestaurantStore } from '@/stores/restaurantStore';
@@ -21,6 +20,7 @@ interface NotificationsContextType {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   dismissNotification: (id: string) => void;
+  clearAllNotifications: () => Promise<void>;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
@@ -187,6 +187,27 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const clearAllNotifications = async () => {
+    try {
+      if (!selectedRestaurant?.id) return;
+      
+      // Delete all notifications for this restaurant from the database
+      const { error } = await supabase
+        .from('notifications' as any)
+        .delete()
+        .eq('restaurant_id', selectedRestaurant.id);
+        
+      if (error) throw error;
+      
+      // Clear notifications in local state
+      setNotifications([]);
+      
+      console.log('All notifications cleared for restaurant:', selectedRestaurant.id);
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+    }
+  };
+
   return (
     <NotificationsContext.Provider value={{
       notifications,
@@ -194,6 +215,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       markAsRead,
       markAllAsRead,
       dismissNotification,
+      clearAllNotifications,
     }}>
       {children}
     </NotificationsContext.Provider>

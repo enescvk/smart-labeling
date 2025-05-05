@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/context/NotificationsContext";
 import {
@@ -11,14 +11,26 @@ import {
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 export const NotificationBell = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, dismissNotification } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, dismissNotification, clearAllNotifications } = useNotifications();
   const [open, setOpen] = useState(false);
 
   // Handle click on a notification
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
+  };
+
+  // Handle clear all notifications
+  const handleClearAll = () => {
+    clearAllNotifications();
+    toast({
+      title: "Notifications cleared",
+      description: "All notifications have been removed.",
+      duration: 3000,
+    });
+    setOpen(false);
   };
 
   return (
@@ -36,11 +48,19 @@ export const NotificationBell = () => {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <h2 className="font-semibold">Notifications</h2>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-              Mark all as read
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+                Mark all as read
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleClearAll} className="flex items-center gap-1">
+                <Trash2 className="h-4 w-4" />
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="h-[300px]">
           {notifications.length === 0 ? (
