@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card } from "@/components/ui/card";
@@ -252,12 +251,24 @@ const History: React.FC = () => {
                 <div className="flex items-center justify-center py-4">
                   <Pagination>
                     <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious 
-                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                          disabled={currentPage === 1}
-                        />
-                      </PaginationItem>
+                      {/* Fix 1: Use Button component for Previous when on first page */}
+                      {currentPage === 1 ? (
+                        <PaginationItem>
+                          <Button 
+                            variant="outline" 
+                            size="default" 
+                            className="gap-1 pl-2.5"
+                            disabled={true}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            <span>Previous</span>
+                          </Button>
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem>
+                          <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                        </PaginationItem>
+                      )}
                       
                       {Array.from({ length: totalPages }).map((_, i) => (
                         <PaginationItem key={i}>
@@ -275,12 +286,24 @@ const History: React.FC = () => {
                         return i >= min && i <= max;
                       })}
                       
-                      <PaginationItem>
-                        <PaginationNext 
-                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                          disabled={currentPage === totalPages}
-                        />
-                      </PaginationItem>
+                      {/* Fix 2: Use Button component for Next when on last page */}
+                      {currentPage === totalPages ? (
+                        <PaginationItem>
+                          <Button 
+                            variant="outline" 
+                            size="default" 
+                            className="gap-1 pr-2.5"
+                            disabled={true}
+                          >
+                            <span>Next</span>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem>
+                          <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+                        </PaginationItem>
+                      )}
                     </PaginationContent>
                   </Pagination>
                 </div>
