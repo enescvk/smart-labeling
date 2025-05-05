@@ -76,7 +76,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
             </PaginationItem>
           ) : (
             <PaginationItem>
-              <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+              <PaginationNext onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))} />
             </PaginationItem>
           )}
         </PaginationContent>
