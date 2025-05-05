@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const History: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchColumn, setSearchColumn] = useState("all");
+  const [searchColumn, setSearchColumn] = useState("product");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -47,13 +47,7 @@ const History: React.FC = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       
-      if (searchColumn === "all") {
-        items = items.filter(item => 
-          item.product.toLowerCase().includes(query) ||
-          item.preparedBy.toLowerCase().includes(query) ||
-          item.id.toLowerCase().includes(query)
-        );
-      } else if (searchColumn === "product") {
+      if (searchColumn === "product") {
         items = items.filter(item => item.product.toLowerCase().includes(query));
       } else if (searchColumn === "staff") {
         items = items.filter(item => {
@@ -191,7 +185,6 @@ const History: React.FC = () => {
                     <SelectValue placeholder="Search by..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Fields</SelectItem>
                     <SelectItem value="product">Product</SelectItem>
                     <SelectItem value="staff">Staff</SelectItem>
                     <SelectItem value="barcode">Barcode</SelectItem>
@@ -203,7 +196,7 @@ const History: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-kitchen-400" size={18} />
                 <Input
                   type="search"
-                  placeholder={`Search by ${searchColumn === 'all' ? 'any field' : searchColumn}...`}
+                  placeholder={`Search by ${searchColumn}...`}
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
