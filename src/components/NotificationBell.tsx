@@ -46,18 +46,18 @@ export const NotificationBell = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="font-semibold">Notifications</h2>
-          <div className="flex gap-2">
+        <div className="flex items-center justify-between px-4 py-2 border-b">
+          <h2 className="font-semibold text-sm">Notifications</h2>
+          <div className="flex gap-1">
             {unreadCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-                Mark all as read
+              <Button variant="ghost" size="xs" onClick={markAllAsRead} className="h-7 px-2 text-xs">
+                Mark all read
               </Button>
             )}
             {notifications.length > 0 && (
-              <Button variant="outline" size="sm" onClick={handleClearAll} className="flex items-center gap-1">
-                <Trash2 className="h-4 w-4" />
-                Clear all
+              <Button variant="outline" size="xs" onClick={handleClearAll} className="flex items-center gap-1 h-7 px-2 text-xs">
+                <Trash2 className="h-3 w-3" />
+                Clear
               </Button>
             )}
           </div>
