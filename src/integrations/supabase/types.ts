@@ -53,6 +53,42 @@ export type Database = {
           },
         ]
       }
+      job_status: {
+        Row: {
+          active: boolean | null
+          command: string | null
+          database: string | null
+          jobid: number | null
+          jobname: string | null
+          nodename: string | null
+          nodeport: number | null
+          schedule: string | null
+          username: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          command?: string | null
+          database?: string | null
+          jobid?: number | null
+          jobname?: string | null
+          nodename?: string | null
+          nodeport?: number | null
+          schedule?: string | null
+          username?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          command?: string | null
+          database?: string | null
+          jobid?: number | null
+          jobname?: string | null
+          nodename?: string | null
+          nodeport?: number | null
+          schedule?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -367,42 +403,7 @@ export type Database = {
       }
     }
     Views: {
-      job_status: {
-        Row: {
-          active: boolean | null
-          command: string | null
-          database: string | null
-          jobid: number | null
-          jobname: string | null
-          nodename: string | null
-          nodeport: number | null
-          schedule: string | null
-          username: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          command?: string | null
-          database?: string | null
-          jobid?: number | null
-          jobname?: string | null
-          nodename?: string | null
-          nodeport?: number | null
-          schedule?: string | null
-          username?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          command?: string | null
-          database?: string | null
-          jobid?: number | null
-          jobname?: string | null
-          nodename?: string | null
-          nodeport?: number | null
-          schedule?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_is_restaurant_admin: {

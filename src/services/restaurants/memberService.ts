@@ -41,7 +41,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // First, get all member IDs for this restaurant using a direct SQL query with security definer function
+    // Directly query all members with new RLS policies in place
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`
@@ -56,13 +56,6 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
 
     if (error) {
       console.error("Error fetching restaurant members:", error);
-      // Handle recursive policy errors specifically
-      if (error.message.includes("recursion") || error.message.includes("policy")) {
-        toast.error("Permission error detected. Please refresh the page and try again.", {
-          id: "recursion-error",
-          duration: 5000,
-        });
-      }
       return [];
     }
 
