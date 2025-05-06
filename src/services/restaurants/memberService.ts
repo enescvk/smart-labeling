@@ -65,17 +65,25 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           duration: 5000,
         });
         
-        // Try using an RPC function call as a workaround
-        const { data: memberIds, error: rpcError } = await supabase
-          .rpc('get_restaurant_members_direct', { restaurant_id_param: restaurantId });
+        // Try using a direct database query as a fallback
+        // Instead of using non-existent RPC function, use the existing one
+        const { data: memberData, error: rpcError } = await supabase
+          .rpc('get_member_restaurants', { p_user_id: null });
           
         if (rpcError) {
           console.error("Error using RPC fallback:", rpcError);
           return [];
         }
         
-        if (!memberIds || memberIds.length === 0) {
+        if (!memberData) {
           console.log("No members returned from RPC function");
+          return [];
+        }
+        
+        // Since memberData might be an array (or another type), check its type before accessing it
+        const memberIds = Array.isArray(memberData) ? memberData : [];
+        if (memberIds.length === 0) {
+          console.log("No member IDs found after processing");
           return [];
         }
         
