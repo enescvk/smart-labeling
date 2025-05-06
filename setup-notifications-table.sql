@@ -12,6 +12,31 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Create security definer functions to safely check membership
+CREATE OR REPLACE FUNCTION public.check_restaurant_membership(restaurant_id UUID, user_id UUID DEFAULT auth.uid())
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.restaurant_members
+    WHERE restaurant_members.restaurant_id = $1
+    AND restaurant_members.user_id = $2
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create security definer function to check admin status
+CREATE OR REPLACE FUNCTION public.check_is_restaurant_admin(restaurant_id UUID, user_id UUID DEFAULT auth.uid())
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.restaurant_members 
+    WHERE restaurant_id = $1 
+    AND user_id = $2 
+    AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Add RLS policies to ensure users can only see notifications for their restaurants
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
@@ -20,10 +45,7 @@ CREATE POLICY "Users can view their restaurant notifications"
   ON public.notifications
   FOR SELECT
   USING (
-    restaurant_id IN (
-      SELECT restaurant_id FROM public.restaurant_members
-      WHERE user_id = auth.uid()
-    )
+    public.check_restaurant_membership(restaurant_id)
   );
 
 -- Policy for users to mark notifications as read
@@ -31,10 +53,7 @@ CREATE POLICY "Users can update their restaurant notifications"
   ON public.notifications
   FOR UPDATE
   USING (
-    restaurant_id IN (
-      SELECT restaurant_id FROM public.restaurant_members
-      WHERE user_id = auth.uid()
-    )
+    public.check_restaurant_membership(restaurant_id)
   );
 
 -- Policy for restaurant admins to delete notifications
@@ -42,8 +61,5 @@ CREATE POLICY "Admins can delete their restaurant notifications"
   ON public.notifications
   FOR DELETE
   USING (
-    restaurant_id IN (
-      SELECT restaurant_id FROM public.restaurant_members
-      WHERE user_id = auth.uid() AND role = 'admin'
-    )
+    public.check_is_restaurant_admin(restaurant_id)
   );
