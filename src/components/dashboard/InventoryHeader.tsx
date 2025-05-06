@@ -13,15 +13,53 @@ import {
 import { PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface InventoryHeaderProps {
   items: InventoryItem[];
+  isLoading: boolean;
+  error: Error | null;
 }
 
-export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items }) => {
+export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoading, error }) => {
   const { selectedRestaurant } = useRestaurantStore();
   
-  const isLoading = false; // Since items are provided via props, there's no loading state
+  console.log("InventoryHeader - rendering with:", {
+    itemsLength: items?.length || 0,
+    restaurantId: selectedRestaurant?.id,
+    isLoading,
+    hasError: !!error
+  });
+
+  // Show error state if there was a problem loading inventory data
+  if (error) {
+    console.error("Error loading inventory items:", error);
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
+          <div className="flex space-x-2">
+            <Button asChild size="sm" variant="outline" className="gap-1">
+              <Link to="/create-label">
+                <PlusCircle className="w-4 h-4" />
+                <span>New Item</span>
+              </Link>
+            </Button>
+          </div>
+        </div>
+        
+        <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg bg-kitchen-50">
+          <h3 className="text-lg font-medium text-red-600">Error loading inventory items</h3>
+          <p className="text-kitchen-500 mt-1">{error.message}</p>
+          <div className="mt-4">
+            <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

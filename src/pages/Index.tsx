@@ -13,6 +13,7 @@ import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { InventoryHeader } from "@/components/dashboard/InventoryHeader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type FilterType = 'active' | 'expiring' | 'expired';
 
@@ -21,6 +22,31 @@ const Index: React.FC = () => {
   const [currentFilter, setCurrentFilter] = useState<FilterType>('active');
   
   console.log("Index page - Selected restaurant:", selectedRestaurant?.name, selectedRestaurant?.id);
+  
+  useEffect(() => {
+    // Verify the user has the correct permissions
+    const checkPermissions = async () => {
+      if (selectedRestaurant?.id) {
+        try {
+          const { data, error } = await supabase.from("inventory")
+            .select("id")
+            .eq("restaurant_id", selectedRestaurant.id)
+            .limit(1);
+            
+          if (error) {
+            console.error("Permission check error:", error);
+            toast.error("Permission issue: " + error.message);
+          } else {
+            console.log("Permission check passed, found items:", data?.length || 0);
+          }
+        } catch (err) {
+          console.error("Unexpected error in permission check:", err);
+        }
+      }
+    };
+    
+    checkPermissions();
+  }, [selectedRestaurant]);
   
   useEffect(() => {
     // Log when the selected restaurant changes
@@ -37,7 +63,9 @@ const Index: React.FC = () => {
       console.log("Fetching active items for restaurant:", selectedRestaurant?.id);
       return getActiveInventoryItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant?.id
+    enabled: !!selectedRestaurant?.id,
+    retry: 2,
+    staleTime: 30000
   });
   
   // Log errors if any
@@ -50,47 +78,63 @@ const Index: React.FC = () => {
   
   const { 
     data: recentItems = [], 
-    isLoading: isLoadingRecent 
+    isLoading: isLoadingRecent,
+    error: recentError
   } = useQuery({
     queryKey: ['inventoryItems', 'recent', selectedRestaurant?.id],
     queryFn: () => {
       console.log("Fetching recent items for restaurant:", selectedRestaurant?.id);
       return getRecentItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant?.id
+    enabled: !!selectedRestaurant?.id,
+    retry: 2
   });
   
   const { 
     data: expiringItems = [], 
-    isLoading: isLoadingExpiring 
+    isLoading: isLoadingExpiring,
+    error: expiringError
   } = useQuery({
     queryKey: ['inventoryItems', 'expiring', selectedRestaurant?.id],
     queryFn: () => {
       console.log("Fetching expiring items for restaurant:", selectedRestaurant?.id);
       return getExpiringItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant?.id
+    enabled: !!selectedRestaurant?.id,
+    retry: 2
   });
   
   const { 
     data: expiredItems = [], 
-    isLoading: isLoadingExpired 
+    isLoading: isLoadingExpired,
+    error: expiredError
   } = useQuery({
     queryKey: ['inventoryItems', 'expired', selectedRestaurant?.id],
     queryFn: () => {
       console.log("Fetching expired items for restaurant:", selectedRestaurant?.id);
       return getExpiredItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant?.id
+    enabled: !!selectedRestaurant?.id,
+    retry: 2
   });
   
   const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring || isLoadingExpired;
+  
+  // Determine current error based on filter
+  const getCurrentError = () => {
+    switch(currentFilter) {
+      case 'active': return activeError;
+      case 'expiring': return expiringError;
+      case 'expired': return expiredError;
+      default: return activeError;
+    }
+  };
 
   const getFilteredItems = () => {
     // Log current data state
-    console.log("Active items:", activeItems.length);
-    console.log("Expiring items:", expiringItems.length);
-    console.log("Expired items:", expiredItems.length);
+    console.log("Active items:", activeItems?.length);
+    console.log("Expiring items:", expiringItems?.length);
+    console.log("Expired items:", expiredItems?.length);
     
     switch (currentFilter) {
       case 'active':
@@ -105,6 +149,8 @@ const Index: React.FC = () => {
         
         // Process each category of items
         const processItems = (items) => {
+          if (!items || !items.length) return;
+          
           items.forEach(item => {
             // If the item already exists in our map, only update it if it doesn't have profile data
             if (itemsMap.has(item.id)) {
@@ -140,7 +186,7 @@ const Index: React.FC = () => {
 
   // Debug log to see which items are displayed
   const filteredItems = getFilteredItems();
-  console.log(`Index page - Showing ${filteredItems.length} items for restaurant: ${selectedRestaurant?.name}`);
+  console.log(`Index page - Showing ${filteredItems?.length || 0} items for restaurant: ${selectedRestaurant?.name}`);
 
   return (
     <Layout>
@@ -148,15 +194,19 @@ const Index: React.FC = () => {
         <PageHeader />
         
         <StatsGrid
-          activeItemsCount={activeItems.length}
-          expiringItemsCount={expiringItems.length}
-          expiredItemsCount={expiredItems.length}
+          activeItemsCount={activeItems?.length || 0}
+          expiringItemsCount={expiringItems?.length || 0}
+          expiredItemsCount={expiredItems?.length || 0}
           isLoading={isLoading}
           onFilterChange={handleFilterChange}
           currentFilter={currentFilter}
         />
         
-        <InventoryHeader items={filteredItems} />
+        <InventoryHeader 
+          items={filteredItems || []} 
+          isLoading={isLoading}
+          error={getCurrentError()}
+        />
       </div>
     </Layout>
   );

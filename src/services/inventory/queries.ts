@@ -21,7 +21,7 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
 
     if (error) {
       console.error("Error fetching inventory items:", error);
-      return [];
+      throw error; // Throw error so it can be caught and handled by React Query
     }
 
     console.log(`Found ${data?.length || 0} inventory items for restaurant ${restaurantId}`);
@@ -64,7 +64,7 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
     return items;
   } catch (err) {
     console.error("Unexpected error in getInventoryItems:", err);
-    return [];
+    throw err; // Rethrow the error to be handled by the caller
   }
 };
 
@@ -88,7 +88,7 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching active inventory items:", error);
-      return [];
+      throw error; // Throw error to be caught and handled
     }
 
     console.log(`Found ${data?.length || 0} active inventory items for restaurant ${restaurantId}`);
@@ -131,7 +131,7 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
     return items;
   } catch (err) {
     console.error("Unexpected error in getActiveInventoryItems:", err);
-    return [];
+    throw err; // Rethrow the error
   }
 };
 
@@ -150,10 +150,15 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
       .select("*")
       .eq("id", id)
       .eq("restaurant_id", restaurantId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching inventory item:", error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.log(`No inventory item found with ID: ${id}`);
       return null;
     }
     
@@ -178,6 +183,9 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
     return item;
   } catch (err) {
     console.error("Unexpected error in getItemById:", err);
-    return null;
+    if (err.message?.includes('No rows returned')) {
+      return null;
+    }
+    throw err;
   }
 };
