@@ -417,6 +417,10 @@ export type Database = {
         Args: { restaurant_id: string; user_id?: string }
         Returns: boolean
       }
+      check_user_membership: {
+        Args: { p_user_id: string }
+        Returns: string[]
+      }
       create_restaurant_with_admin: {
         Args: { restaurant_name: string }
         Returns: string

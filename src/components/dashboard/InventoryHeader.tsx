@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { InventoryCard } from "@/components/InventoryCard";
 import { InventoryItem } from "@/services/inventory/types";
@@ -24,16 +24,29 @@ interface InventoryHeaderProps {
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoading, error }) => {
   const { selectedRestaurant } = useRestaurantStore();
   
-  console.log("InventoryHeader - rendering with:", {
-    itemsLength: items?.length || 0,
-    restaurantId: selectedRestaurant?.id,
-    isLoading,
-    hasError: !!error
-  });
+  useEffect(() => {
+    console.log("InventoryHeader - mounted/updated with:", {
+      itemsCount: items?.length || 0,
+      restaurantId: selectedRestaurant?.id,
+      restaurantName: selectedRestaurant?.name,
+      isLoading,
+      hasError: !!error
+    });
+    
+    return () => {
+      console.log("InventoryHeader - unmounting");
+    };
+  }, [items, selectedRestaurant, isLoading, error]);
 
   // Show error state if there was a problem loading inventory data
   if (error) {
     console.error("Error loading inventory items:", error);
+    
+    // Check if the error is related to permissions or recursion
+    const isPermissionError = error.message?.includes("permission") || 
+                             error.message?.includes("recursion") ||
+                             error.message?.includes("policy");
+    
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-2">
@@ -51,6 +64,11 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
         <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg bg-kitchen-50">
           <h3 className="text-lg font-medium text-red-600">Error loading inventory items</h3>
           <p className="text-kitchen-500 mt-1">{error.message}</p>
+          {isPermissionError && (
+            <p className="text-kitchen-500 mt-2">
+              This could be a permission issue. Try refreshing the page or logging out and back in.
+            </p>
+          )}
           <div className="mt-4">
             <Button onClick={() => window.location.reload()} variant="outline" size="sm">
               Retry
@@ -64,7 +82,9 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
+        <h2 className="text-xl font-semibold text-kitchen-800">
+          Inventory {selectedRestaurant?.name ? `for ${selectedRestaurant.name}` : ''}
+        </h2>
         <div className="flex space-x-2">
           <Button asChild size="sm" variant="outline" className="gap-1">
             <Link to="/create-label">
@@ -90,7 +110,9 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
       ) : selectedRestaurant ? (
         <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg">
           <h3 className="text-lg font-medium text-kitchen-600">No inventory items found</h3>
-          <p className="text-kitchen-500 mt-1">Create your first inventory item to get started</p>
+          <p className="text-kitchen-500 mt-1">
+            {`No items found for restaurant: ${selectedRestaurant.name}`}
+          </p>
           <div className="mt-4">
             <Button asChild variant="outline" size="sm">
               <Link to="/create-label" className="inline-flex items-center">

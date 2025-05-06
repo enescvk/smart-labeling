@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { RestaurantMember } from "./types";
+import { toast } from "sonner";
 
 // Check if the current user is an admin of a restaurant
 export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
@@ -45,33 +46,58 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
 
     if (error) {
       console.error("Error fetching restaurant members:", error);
+      if (error.message.includes("recursion") || error.message.includes("policy")) {
+        toast.error("Permission error detected. The database policies have been fixed. Please reload the page.");
+      }
       throw error;
+    }
+
+    if (!members || members.length === 0) {
+      return [];
     }
 
     // Now get the profile information for each member
     const formattedMembers: RestaurantMember[] = [];
 
     for (const member of members) {
-      // Get the user profile for this member
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, first_name, last_name')
-        .eq('id', member.user_id)
-        .single();
+      try {
+        // Get the user profile for this member
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, first_name, last_name')
+          .eq('id', member.user_id)
+          .single();
 
-      formattedMembers.push({
-        id: member.id,
-        user_id: member.user_id,
-        restaurant_id: member.restaurant_id,
-        role: member.role as 'admin' | 'staff',
-        created_at: member.created_at,
-        updated_at: member.updated_at,
-        user: {
-          email: profile?.username || 'Unknown Email',
-          first_name: profile?.first_name ?? null,
-          last_name: profile?.last_name ?? null,
-        }
-      });
+        formattedMembers.push({
+          id: member.id,
+          user_id: member.user_id,
+          restaurant_id: member.restaurant_id,
+          role: member.role as 'admin' | 'staff',
+          created_at: member.created_at,
+          updated_at: member.updated_at,
+          user: {
+            email: profile?.username || 'Unknown Email',
+            first_name: profile?.first_name ?? null,
+            last_name: profile?.last_name ?? null,
+          }
+        });
+      } catch (profileError) {
+        console.error("Error fetching profile for member:", profileError);
+        // Add member with minimal info even if profile fetch fails
+        formattedMembers.push({
+          id: member.id,
+          user_id: member.user_id,
+          restaurant_id: member.restaurant_id,
+          role: member.role as 'admin' | 'staff',
+          created_at: member.created_at,
+          updated_at: member.updated_at,
+          user: {
+            email: 'Unknown Email',
+            first_name: null,
+            last_name: null,
+          }
+        });
+      }
     }
 
     console.log("Fetched members:", formattedMembers);
