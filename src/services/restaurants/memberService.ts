@@ -13,6 +13,7 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
   try {
     console.log("Checking if user is admin of restaurant:", restaurantId);
     
+    // Use direct RPC call to avoid recursion in policies
     const { data, error } = await supabase
       .rpc('is_admin_of_restaurant', {
         p_restaurant_id: restaurantId,
@@ -41,74 +42,135 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // Directly query all members with new RLS policies in place
-    const { data: members, error } = await supabase
-      .from('restaurant_members')
-      .select(`
-        id,
-        user_id,
-        restaurant_id,
-        role,
-        created_at,
-        updated_at
-      `)
-      .eq('restaurant_id', restaurantId);
+    // Try to avoid the recursion by using more direct queries
+    // First check if the user is admin of the restaurant
+    const isAdmin = await isRestaurantAdmin(restaurantId);
+    console.log("User is admin of restaurant:", isAdmin);
 
-    if (error) {
-      console.error("Error fetching restaurant members:", error);
-      return [];
-    }
-
-    if (!members || members.length === 0) {
-      return [];
-    }
-
-    // Now get the profile information for each member
-    const formattedMembers: RestaurantMember[] = [];
-    
-    // Fetch all profiles at once to reduce database calls
-    const userIds = members.map(member => member.user_id);
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, username, first_name, last_name')
-      .in('id', userIds);
-    
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-    }
-    
-    // Create a map for quick profile lookup
-    const profileMap = new Map();
-    if (profiles) {
-      profiles.forEach(profile => {
-        profileMap.set(profile.id, profile);
+    // Use RPC function call to get members instead of direct query to avoid RLS recursion
+    const { data: memberIds, error: memberIdsError } = await supabase
+      .rpc('get_member_restaurants', {
+        p_user_id: null // null will make the function use auth.uid()
       });
-    }
 
-    for (const member of members) {
-      const profile = profileMap.get(member.user_id);
+    if (memberIdsError) {
+      console.error("Error using get_member_restaurants:", memberIdsError);
       
-      formattedMembers.push({
-        id: member.id,
-        user_id: member.user_id,
-        restaurant_id: member.restaurant_id,
-        role: member.role as 'admin' | 'staff',
-        created_at: member.created_at,
-        updated_at: member.updated_at,
-        user: {
-          email: profile?.username || 'Unknown Email',
-          first_name: profile?.first_name ?? null,
-          last_name: profile?.last_name ?? null,
-        }
-      });
-    }
+      // Fallback to direct query if RPC fails
+      const { data: members, error } = await supabase
+        .from('restaurant_members')
+        .select(`
+          id,
+          user_id,
+          restaurant_id,
+          role,
+          created_at,
+          updated_at
+        `)
+        .eq('restaurant_id', restaurantId);
 
-    console.log("Fetched members:", formattedMembers);
-    return formattedMembers;
-  } catch (error) {
-    console.error("Error in getRestaurantMembers:", error);
+      if (error) {
+        console.error("Error fetching restaurant members:", error);
+        
+        // Handle recursion policy errors with a user-friendly message
+        if (error.message.includes("recursion") || error.message.includes("policy")) {
+          toast.error("Database policy error detected. Please refresh the page.", {
+            id: "member-recursion-error",
+            duration: 5000,
+          });
+        }
+        
+        return [];
+      }
+      
+      if (!members || members.length === 0) {
+        return [];
+      }
+      
+      // Continue with the profile data fetching logic
+      return formatMembersWithProfiles(members);
+    }
+    
+    // If we successfully got the members using RPC, we need a different approach
+    // If the current restaurant is in the list of member restaurants or the user is an admin
+    if (memberIds.includes(restaurantId) || isAdmin) {
+      // Directly query restaurant members since we know the user has access
+      const { data: members, error } = await supabase
+        .from('restaurant_members')
+        .select(`
+          id,
+          user_id,
+          restaurant_id,
+          role,
+          created_at,
+          updated_at
+        `)
+        .eq('restaurant_id', restaurantId);
+        
+      if (error) {
+        console.error("Error fetching restaurant members:", error);
+        return [];
+      }
+      
+      if (!members || members.length === 0) {
+        return [];
+      }
+      
+      // Continue with the profile data fetching logic
+      return formatMembersWithProfiles(members);
+    }
+    
+    return [];
+  } catch (err) {
+    console.error("Error in getRestaurantMembers:", err);
     return [];
   }
+};
+
+// Helper function to format members with their profiles
+const formatMembersWithProfiles = async (members: any[]): Promise<RestaurantMember[]> => {
+  // Fetch all profiles at once to reduce database calls
+  const userIds = members.map(member => member.user_id);
+  
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, username, first_name, last_name")
+    .in("id", userIds);
+  
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError);
+    // Continue with the members data even if profiles can't be fetched
+  }
+  
+  // Create a map for quick profile lookup
+  const profileMap = new Map();
+  if (profiles) {
+    profiles.forEach(profile => {
+      profileMap.set(profile.id, profile);
+    });
+  }
+
+  const formattedMembers: RestaurantMember[] = [];
+  for (const member of members) {
+    const profile = profileMap.get(member.user_id);
+    
+    formattedMembers.push({
+      id: member.id,
+      user_id: member.user_id,
+      restaurant_id: member.restaurant_id,
+      role: member.role as 'admin' | 'staff',
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      user: {
+        email: profile?.username || 'Unknown Email',
+        first_name: profile?.first_name ?? null,
+        last_name: profile?.last_name ?? null,
+      }
+    });
+  }
+
+  console.log("Formatted members:", formattedMembers);
+  return formattedMembers;
 };
 
 // Add a user to a restaurant
