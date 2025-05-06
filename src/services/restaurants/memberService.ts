@@ -13,10 +13,11 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
   try {
     console.log("Checking if user is admin of restaurant:", restaurantId);
     
-    // Use direct RPC call to the security definer function to avoid recursion
+    // Use the security definer function that we created in our SQL migration
     const { data, error } = await supabase
-      .rpc('is_admin_of_restaurant', {
-        p_restaurant_id: restaurantId,
+      .rpc('check_is_restaurant_admin', {
+        restaurant_id: restaurantId,
+        user_id: undefined // This will default to auth.uid() in the function
       });
 
     if (error) {
@@ -42,7 +43,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // Use direct query to fetch restaurant members with the fixed RLS policies
+    // Use direct query to fetch restaurant members with the updated RLS policies
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`

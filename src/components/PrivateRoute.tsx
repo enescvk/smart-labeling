@@ -7,7 +7,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { supabase } from "@/integrations/supabase/client";
-import { isRestaurantAdmin } from "@/services/restaurants/memberService";
 
 interface PrivateRouteProps {
   requiresRestaurant: boolean;
@@ -85,9 +84,17 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
           // Check admin status if there's a selected restaurant
           if (selectedRestaurant) {
             try {
-              // Use the isRestaurantAdmin function that calls our security definer function
-              const adminStatus = await isRestaurantAdmin(selectedRestaurant.id);
-              setIsAdmin(adminStatus);
+              // Use the RPC function to check admin status
+              const { data, error } = await supabase
+                .rpc('check_is_restaurant_admin', { 
+                  restaurant_id: selectedRestaurant.id 
+                });
+              
+              if (error) {
+                console.error("Error checking admin status:", error);
+              } else {
+                setIsAdmin(!!data);
+              }
             } catch (error) {
               console.error("Error in admin check:", error);
             }
