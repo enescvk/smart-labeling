@@ -13,7 +13,7 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
   console.log(`Fetching all inventory items for restaurant: ${restaurantId}`);
   
   try {
-    // First, let's get the inventory items
+    // First, let's get the inventory items directly without relying on RLS
     const { data, error } = await supabase
       .from("inventory")
       .select("*")
@@ -41,32 +41,33 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
     }
 
     // Now get all the unique user IDs from the prepared_by field
-    const userIds = [...new Set(data.map(item => item.prepared_by))];
+    const userIds = [...new Set(data.map(item => item.prepared_by))].filter(Boolean);
     
     // Fetch profile information for these users
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name")
-      .in("id", userIds);
-      
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      // Continue with the inventory data even if profiles can't be fetched
-    }
+    let profilesMap = {};
     
-    // Create a map of user IDs to profile data for easier lookup
-    const profilesMap = {};
-    if (profilesData) {
-      profilesData.forEach(profile => {
-        profilesMap[profile.id] = profile;
-      });
+    if (userIds.length > 0) {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name")
+        .in("id", userIds);
+        
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        // Continue with the inventory data even if profiles can't be fetched
+      } else if (profilesData) {
+        // Create a map of user IDs to profile data for easier lookup
+        profilesData.forEach(profile => {
+          profilesMap[profile.id] = profile;
+        });
+      }
     }
     
     // Map the database items and add profile information
     const items = data.map(item => {
       return {
         ...mapDatabaseItem(item),
-        preparedByProfile: profilesMap[item.prepared_by] || null
+        preparedByProfile: item.prepared_by ? profilesMap[item.prepared_by] || null : null
       };
     });
     

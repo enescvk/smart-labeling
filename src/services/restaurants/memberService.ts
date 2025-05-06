@@ -42,87 +42,110 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // Try to avoid the recursion by using more direct queries
-    // First check if the user is admin of the restaurant
-    const isAdmin = await isRestaurantAdmin(restaurantId);
-    console.log("User is admin of restaurant:", isAdmin);
-
-    // Use RPC function call to get members instead of direct query to avoid RLS recursion
-    const { data: memberIds, error: memberIdsError } = await supabase
-      .rpc('get_member_restaurants', {
-        p_user_id: null // null will make the function use auth.uid()
-      });
-
-    if (memberIdsError) {
-      console.error("Error using get_member_restaurants:", memberIdsError);
+    // Use direct RPC function call to circumvent the RLS policies that cause recursion
+    const { data: members, error } = await supabase
+      .from('restaurant_members')
+      .select(`
+        id,
+        user_id,
+        restaurant_id,
+        role,
+        created_at,
+        updated_at
+      `)
+      .eq('restaurant_id', restaurantId);
       
-      // Fallback to direct query if RPC fails
-      const { data: members, error } = await supabase
-        .from('restaurant_members')
-        .select(`
-          id,
-          user_id,
-          restaurant_id,
-          role,
-          created_at,
-          updated_at
-        `)
-        .eq('restaurant_id', restaurantId);
-
-      if (error) {
-        console.error("Error fetching restaurant members:", error);
+    if (error) {
+      console.error("Error fetching restaurant members:", error);
+      
+      // Handle recursion policy errors with a user-friendly message
+      if (error.message.includes("recursion") || error.message.includes("policy")) {
+        toast.error("Database policy error detected. Please refresh the page.", {
+          id: "member-recursion-error",
+          duration: 5000,
+        });
         
-        // Handle recursion policy errors with a user-friendly message
-        if (error.message.includes("recursion") || error.message.includes("policy")) {
-          toast.error("Database policy error detected. Please refresh the page.", {
-            id: "member-recursion-error",
-            duration: 5000,
-          });
+        // Try using an RPC function call as a workaround
+        const { data: memberIds, error: rpcError } = await supabase
+          .rpc('get_restaurant_members_direct', { restaurant_id_param: restaurantId });
+          
+        if (rpcError) {
+          console.error("Error using RPC fallback:", rpcError);
+          return [];
         }
         
-        return [];
-      }
-      
-      if (!members || members.length === 0) {
-        return [];
-      }
-      
-      // Continue with the profile data fetching logic
-      return formatMembersWithProfiles(members);
-    }
-    
-    // If we successfully got the members using RPC, we need a different approach
-    // If the current restaurant is in the list of member restaurants or the user is an admin
-    if (memberIds.includes(restaurantId) || isAdmin) {
-      // Directly query restaurant members since we know the user has access
-      const { data: members, error } = await supabase
-        .from('restaurant_members')
-        .select(`
-          id,
-          user_id,
-          restaurant_id,
-          role,
-          created_at,
-          updated_at
-        `)
-        .eq('restaurant_id', restaurantId);
+        if (!memberIds || memberIds.length === 0) {
+          console.log("No members returned from RPC function");
+          return [];
+        }
         
-      if (error) {
-        console.error("Error fetching restaurant members:", error);
-        return [];
+        // Use the member IDs from the RPC call to fetch member details
+        return formatMembers(memberIds);
       }
       
-      if (!members || members.length === 0) {
-        return [];
-      }
-      
-      // Continue with the profile data fetching logic
-      return formatMembersWithProfiles(members);
+      return [];
     }
     
-    return [];
+    if (!members || members.length === 0) {
+      return [];
+    }
+    
+    // Continue with the profile data fetching logic
+    return formatMembersWithProfiles(members);
   } catch (err) {
     console.error("Error in getRestaurantMembers:", err);
+    return [];
+  }
+};
+
+// Helper function to format member IDs returned from RPC
+const formatMembers = async (memberData: any[]): Promise<RestaurantMember[]> => {
+  try {
+    // Extract user IDs from the member data
+    const userIds = memberData.map(member => member.user_id);
+    
+    // Fetch profiles for the user IDs
+    const { data: profiles, error } = await supabase
+      .from("profiles")
+      .select("id, username, first_name, last_name")
+      .in("id", userIds);
+    
+    if (error) {
+      console.error("Error fetching profiles:", error);
+      return [];
+    }
+    
+    // Create a map for quick profile lookup
+    const profileMap = new Map();
+    if (profiles) {
+      profiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+    
+    // Format the members with profile data
+    const formattedMembers: RestaurantMember[] = [];
+    for (const member of memberData) {
+      const profile = profileMap.get(member.user_id);
+      
+      formattedMembers.push({
+        id: member.id,
+        user_id: member.user_id,
+        restaurant_id: member.restaurant_id,
+        role: member.role as 'admin' | 'staff',
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+        user: {
+          email: profile?.username || 'Unknown Email',
+          first_name: profile?.first_name ?? null,
+          last_name: profile?.last_name ?? null,
+        }
+      });
+    }
+    
+    return formattedMembers;
+  } catch (err) {
+    console.error("Error in formatMembers:", err);
     return [];
   }
 };
