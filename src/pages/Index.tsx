@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -11,6 +12,7 @@ import { useRestaurantStore } from "@/stores/restaurantStore";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { InventoryHeader } from "@/components/dashboard/InventoryHeader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { toast } from "sonner";
 
 type FilterType = 'active' | 'expiring' | 'expired';
 
@@ -20,17 +22,31 @@ const Index: React.FC = () => {
   
   console.log("Index page - Selected restaurant:", selectedRestaurant?.name, selectedRestaurant?.id);
   
+  useEffect(() => {
+    // Log when the selected restaurant changes
+    console.log("Restaurant changed:", selectedRestaurant?.id, selectedRestaurant?.name);
+  }, [selectedRestaurant]);
+  
   const { 
     data: activeItems = [], 
-    isLoading: isLoadingActive 
+    isLoading: isLoadingActive,
+    error: activeError 
   } = useQuery({
     queryKey: ['inventoryItems', 'active', selectedRestaurant?.id],
     queryFn: () => {
       console.log("Fetching active items for restaurant:", selectedRestaurant?.id);
       return getActiveInventoryItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant
+    enabled: !!selectedRestaurant?.id
   });
+  
+  // Log errors if any
+  useEffect(() => {
+    if (activeError) {
+      console.error("Error fetching active items:", activeError);
+      toast.error("Failed to fetch inventory items");
+    }
+  }, [activeError]);
   
   const { 
     data: recentItems = [], 
@@ -41,7 +57,7 @@ const Index: React.FC = () => {
       console.log("Fetching recent items for restaurant:", selectedRestaurant?.id);
       return getRecentItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant
+    enabled: !!selectedRestaurant?.id
   });
   
   const { 
@@ -53,7 +69,7 @@ const Index: React.FC = () => {
       console.log("Fetching expiring items for restaurant:", selectedRestaurant?.id);
       return getExpiringItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant
+    enabled: !!selectedRestaurant?.id
   });
   
   const { 
@@ -65,12 +81,17 @@ const Index: React.FC = () => {
       console.log("Fetching expired items for restaurant:", selectedRestaurant?.id);
       return getExpiredItems(selectedRestaurant?.id);
     },
-    enabled: !!selectedRestaurant
+    enabled: !!selectedRestaurant?.id
   });
   
   const isLoading = isLoadingActive || isLoadingRecent || isLoadingExpiring || isLoadingExpired;
 
   const getFilteredItems = () => {
+    // Log current data state
+    console.log("Active items:", activeItems.length);
+    console.log("Expiring items:", expiringItems.length);
+    console.log("Expired items:", expiredItems.length);
+    
     switch (currentFilter) {
       case 'active':
         return activeItems;
@@ -113,11 +134,13 @@ const Index: React.FC = () => {
   };
 
   const handleFilterChange = (filter: FilterType) => {
+    console.log("Filter changed to:", filter);
     setCurrentFilter(filter);
   };
 
   // Debug log to see which items are displayed
-  console.log(`Index page - Showing ${getFilteredItems().length} items for restaurant: ${selectedRestaurant?.name}`);
+  const filteredItems = getFilteredItems();
+  console.log(`Index page - Showing ${filteredItems.length} items for restaurant: ${selectedRestaurant?.name}`);
 
   return (
     <Layout>
@@ -133,7 +156,7 @@ const Index: React.FC = () => {
           currentFilter={currentFilter}
         />
         
-        <InventoryHeader items={getFilteredItems()} />
+        <InventoryHeader items={filteredItems} />
       </div>
     </Layout>
   );
