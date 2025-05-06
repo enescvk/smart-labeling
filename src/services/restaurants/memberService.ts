@@ -42,7 +42,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // Use direct RPC function call to circumvent the RLS policies that cause recursion
+    // Use direct query to fetch restaurant members
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`
@@ -65,13 +65,12 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           duration: 5000,
         });
         
-        // Try using a direct database query as a fallback
-        // Instead of using non-existent RPC function, use the existing one
-        const { data: memberData, error: rpcError } = await supabase
-          .rpc('get_member_restaurants', { p_user_id: null });
+        // Try using a different approach to fetch members
+        const { data: memberData, error: fallbackError } = await supabase
+          .rpc('get_member_restaurants');
           
-        if (rpcError) {
-          console.error("Error using RPC fallback:", rpcError);
+        if (fallbackError) {
+          console.error("Error using RPC fallback:", fallbackError);
           return [];
         }
         
@@ -80,7 +79,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
           return [];
         }
         
-        // Since memberData might be an array (or another type), check its type before accessing it
+        // Process the member data
         const memberIds = Array.isArray(memberData) ? memberData : [];
         if (memberIds.length === 0) {
           console.log("No member IDs found after processing");

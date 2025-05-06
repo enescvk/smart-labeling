@@ -55,37 +55,28 @@ export type Database = {
       }
       job_status: {
         Row: {
-          active: boolean | null
-          command: string | null
-          database: string | null
           jobid: number | null
           jobname: string | null
-          nodename: string | null
-          nodeport: number | null
+          last_run: string | null
+          next_run: string | null
           schedule: string | null
-          username: string | null
+          status: string | null
         }
         Insert: {
-          active?: boolean | null
-          command?: string | null
-          database?: string | null
           jobid?: number | null
           jobname?: string | null
-          nodename?: string | null
-          nodeport?: number | null
+          last_run?: string | null
+          next_run?: string | null
           schedule?: string | null
-          username?: string | null
+          status?: string | null
         }
         Update: {
-          active?: boolean | null
-          command?: string | null
-          database?: string | null
           jobid?: number | null
           jobname?: string | null
-          nodename?: string | null
-          nodeport?: number | null
+          last_run?: string | null
+          next_run?: string | null
           schedule?: string | null
-          username?: string | null
+          status?: string | null
         }
         Relationships: []
       }
