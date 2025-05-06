@@ -42,7 +42,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // Use direct query to fetch restaurant members
+    // Use direct query to fetch restaurant members now with fixed RLS policies
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`
@@ -57,39 +57,10 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       
     if (error) {
       console.error("Error fetching restaurant members:", error);
-      
-      // Handle recursion policy errors with a user-friendly message
-      if (error.message.includes("recursion") || error.message.includes("policy")) {
-        toast.error("Database policy error detected. Please refresh the page.", {
-          id: "member-recursion-error",
-          duration: 5000,
-        });
-        
-        // Try using a different approach to fetch members
-        const { data: memberData, error: fallbackError } = await supabase
-          .rpc('get_member_restaurants');
-          
-        if (fallbackError) {
-          console.error("Error using RPC fallback:", fallbackError);
-          return [];
-        }
-        
-        if (!memberData) {
-          console.log("No members returned from RPC function");
-          return [];
-        }
-        
-        // Process the member data
-        const memberIds = Array.isArray(memberData) ? memberData : [];
-        if (memberIds.length === 0) {
-          console.log("No member IDs found after processing");
-          return [];
-        }
-        
-        // Use the member IDs from the RPC call to fetch member details
-        return formatMembers(memberIds);
-      }
-      
+      toast.error("Error fetching team members. Please refresh the page.", {
+        id: "member-error",
+        duration: 5000,
+      });
       return [];
     }
     
@@ -101,58 +72,6 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
     return formatMembersWithProfiles(members);
   } catch (err) {
     console.error("Error in getRestaurantMembers:", err);
-    return [];
-  }
-};
-
-// Helper function to format member IDs returned from RPC
-const formatMembers = async (memberData: any[]): Promise<RestaurantMember[]> => {
-  try {
-    // Extract user IDs from the member data
-    const userIds = memberData.map(member => member.user_id);
-    
-    // Fetch profiles for the user IDs
-    const { data: profiles, error } = await supabase
-      .from("profiles")
-      .select("id, username, first_name, last_name")
-      .in("id", userIds);
-    
-    if (error) {
-      console.error("Error fetching profiles:", error);
-      return [];
-    }
-    
-    // Create a map for quick profile lookup
-    const profileMap = new Map();
-    if (profiles) {
-      profiles.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
-    }
-    
-    // Format the members with profile data
-    const formattedMembers: RestaurantMember[] = [];
-    for (const member of memberData) {
-      const profile = profileMap.get(member.user_id);
-      
-      formattedMembers.push({
-        id: member.id,
-        user_id: member.user_id,
-        restaurant_id: member.restaurant_id,
-        role: member.role as 'admin' | 'staff',
-        created_at: member.created_at,
-        updated_at: member.updated_at,
-        user: {
-          email: profile?.username || 'Unknown Email',
-          first_name: profile?.first_name ?? null,
-          last_name: profile?.last_name ?? null,
-        }
-      });
-    }
-    
-    return formattedMembers;
-  } catch (err) {
-    console.error("Error in formatMembers:", err);
     return [];
   }
 };

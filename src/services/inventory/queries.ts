@@ -13,7 +13,7 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
   console.log(`Fetching all inventory items for restaurant: ${restaurantId}`);
   
   try {
-    // First, let's get the inventory items directly without relying on RLS
+    // Get the inventory items with fixed RLS policies
     const { data, error } = await supabase
       .from("inventory")
       .select("*")
@@ -22,16 +22,11 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
 
     if (error) {
       console.error("Error fetching inventory items:", error);
-      
-      // Handle recursion policy errors
-      if (error.message.includes("recursion") || error.message.includes("policy")) {
-        toast.error("Database policy error detected. Please refresh the page.", {
-          id: "inventory-recursion-error",
-          duration: 5000,
-        });
-      }
-      
-      throw error; // Throw error so it can be caught and handled by React Query
+      toast.error("Failed to fetch inventory items", {
+        id: "inventory-error",
+        duration: 5000,
+      });
+      throw error;
     }
 
     console.log(`Found ${data?.length || 0} inventory items for restaurant ${restaurantId}`);
@@ -89,7 +84,7 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
   console.log(`Fetching active inventory items for restaurant: ${restaurantId}`);
   
   try {
-    // First, let's get the active inventory items
+    // Get the active inventory items with fixed RLS policies
     const { data, error } = await supabase
       .from("inventory")
       .select("*")
@@ -99,16 +94,11 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching active inventory items:", error);
-      
-      // Handle recursion policy errors
-      if (error.message.includes("recursion") || error.message.includes("policy")) {
-        toast.error("Database policy error detected. Please refresh the page.", {
-          id: "inventory-recursion-error",
-          duration: 5000,
-        });
-      }
-      
-      throw error; // Throw error to be caught and handled
+      toast.error("Failed to fetch inventory items", {
+        id: "inventory-active-error",
+        duration: 5000,
+      });
+      throw error;
     }
 
     console.log(`Found ${data?.length || 0} active inventory items for restaurant ${restaurantId}`);
@@ -174,15 +164,10 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching inventory item:", error);
-      
-      // Handle recursion policy errors
-      if (error.message.includes("recursion") || error.message.includes("policy")) {
-        toast.error("Database policy error detected. Please refresh the page.", {
-          id: "inventory-item-recursion-error",
-          duration: 5000,
-        });
-      }
-      
+      toast.error("Failed to fetch inventory item", {
+        id: "inventory-item-error",
+        duration: 5000,
+      });
       throw error;
     }
     

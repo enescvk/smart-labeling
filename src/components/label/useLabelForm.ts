@@ -60,7 +60,16 @@ export const useLabelForm = () => {
       }
 
       try {
+        console.log("Fetching restaurant members for form:", selectedRestaurant.id);
         const fetchedMembers = await getRestaurantMembers(selectedRestaurant.id);
+        console.log("Received members:", fetchedMembers);
+        
+        if (!fetchedMembers || fetchedMembers.length === 0) {
+          console.log("No members found or empty array returned");
+          setMembers([]);
+          return;
+        }
+        
         const memberOptions = fetchedMembers.map((m) => {
           let name = "";
           if (m.user?.first_name || m.user?.last_name) {
@@ -77,12 +86,16 @@ export const useLabelForm = () => {
             name
           });
         });
+        
+        console.log("Processed member options:", memberOptions);
         setMembers(memberOptions);
+        
         if (formData.preparedBy && !memberOptions.find(m => m.id === formData.preparedBy)) {
           setFormData(prev => ({ ...prev, preparedBy: "" }));
         }
       } catch (error) {
         console.error("Failed to fetch restaurant members:", error);
+        toast.error("Failed to load team members. Please refresh the page.");
       }
     };
 
