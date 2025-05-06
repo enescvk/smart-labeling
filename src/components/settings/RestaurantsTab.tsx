@@ -51,8 +51,8 @@ export const RestaurantsTab = () => {
       
       try {
         const { data, error } = await supabase
-          .rpc('is_admin_of_restaurant', { 
-            p_restaurant_id: selectedRestaurant.id 
+          .rpc('check_is_restaurant_admin', { 
+            restaurant_id: selectedRestaurant.id 
           });
         
         if (error) {
