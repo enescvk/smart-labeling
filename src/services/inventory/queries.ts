@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItem, mapDatabaseItem } from "./types";
+import { toast } from "sonner";
 
 // Get all inventory items
 export const getInventoryItems = async (restaurantId?: string | null): Promise<InventoryItem[]> => {
@@ -21,6 +22,15 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
 
     if (error) {
       console.error("Error fetching inventory items:", error);
+      
+      // Handle recursion policy errors
+      if (error.message.includes("recursion") || error.message.includes("policy")) {
+        toast.error("Database policy error detected. Please refresh the page.", {
+          id: "inventory-recursion-error",
+          duration: 5000,
+        });
+      }
+      
       throw error; // Throw error so it can be caught and handled by React Query
     }
 
@@ -88,6 +98,15 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching active inventory items:", error);
+      
+      // Handle recursion policy errors
+      if (error.message.includes("recursion") || error.message.includes("policy")) {
+        toast.error("Database policy error detected. Please refresh the page.", {
+          id: "inventory-recursion-error",
+          duration: 5000,
+        });
+      }
+      
       throw error; // Throw error to be caught and handled
     }
 
@@ -154,6 +173,15 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching inventory item:", error);
+      
+      // Handle recursion policy errors
+      if (error.message.includes("recursion") || error.message.includes("policy")) {
+        toast.error("Database policy error detected. Please refresh the page.", {
+          id: "inventory-item-recursion-error",
+          duration: 5000,
+        });
+      }
+      
       throw error;
     }
     

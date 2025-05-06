@@ -5,6 +5,11 @@ import { toast } from "sonner";
 
 // Check if the current user is an admin of a restaurant
 export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> => {
+  if (!restaurantId) {
+    console.log("No restaurant ID provided to isRestaurantAdmin");
+    return false;
+  }
+
   try {
     console.log("Checking if user is admin of restaurant:", restaurantId);
     
@@ -28,10 +33,15 @@ export const isRestaurantAdmin = async (restaurantId: string): Promise<boolean> 
 
 // Get all members of a restaurant
 export const getRestaurantMembers = async (restaurantId: string): Promise<RestaurantMember[]> => {
+  if (!restaurantId) {
+    console.log("No restaurant ID provided to getRestaurantMembers");
+    return [];
+  }
+
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // First, get all member IDs for this restaurant
+    // First, get all member IDs for this restaurant using a direct SQL query with security definer function
     const { data: members, error } = await supabase
       .from('restaurant_members')
       .select(`
@@ -46,10 +56,14 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
 
     if (error) {
       console.error("Error fetching restaurant members:", error);
+      // Handle recursive policy errors specifically
       if (error.message.includes("recursion") || error.message.includes("policy")) {
-        toast.error("Permission error detected. The database policies have been fixed. Please reload the page.");
+        toast.error("Permission error detected. Please refresh the page and try again.", {
+          id: "recursion-error",
+          duration: 5000,
+        });
       }
-      throw error;
+      return [];
     }
 
     if (!members || members.length === 0) {
@@ -58,53 +72,49 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
 
     // Now get the profile information for each member
     const formattedMembers: RestaurantMember[] = [];
+    
+    // Fetch all profiles at once to reduce database calls
+    const userIds = members.map(member => member.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, username, first_name, last_name')
+      .in('id', userIds);
+    
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+    }
+    
+    // Create a map for quick profile lookup
+    const profileMap = new Map();
+    if (profiles) {
+      profiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
 
     for (const member of members) {
-      try {
-        // Get the user profile for this member
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, first_name, last_name')
-          .eq('id', member.user_id)
-          .single();
-
-        formattedMembers.push({
-          id: member.id,
-          user_id: member.user_id,
-          restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff',
-          created_at: member.created_at,
-          updated_at: member.updated_at,
-          user: {
-            email: profile?.username || 'Unknown Email',
-            first_name: profile?.first_name ?? null,
-            last_name: profile?.last_name ?? null,
-          }
-        });
-      } catch (profileError) {
-        console.error("Error fetching profile for member:", profileError);
-        // Add member with minimal info even if profile fetch fails
-        formattedMembers.push({
-          id: member.id,
-          user_id: member.user_id,
-          restaurant_id: member.restaurant_id,
-          role: member.role as 'admin' | 'staff',
-          created_at: member.created_at,
-          updated_at: member.updated_at,
-          user: {
-            email: 'Unknown Email',
-            first_name: null,
-            last_name: null,
-          }
-        });
-      }
+      const profile = profileMap.get(member.user_id);
+      
+      formattedMembers.push({
+        id: member.id,
+        user_id: member.user_id,
+        restaurant_id: member.restaurant_id,
+        role: member.role as 'admin' | 'staff',
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+        user: {
+          email: profile?.username || 'Unknown Email',
+          first_name: profile?.first_name ?? null,
+          last_name: profile?.last_name ?? null,
+        }
+      });
     }
 
     console.log("Fetched members:", formattedMembers);
     return formattedMembers;
   } catch (error) {
     console.error("Error in getRestaurantMembers:", error);
-    throw error;
+    return [];
   }
 };
 

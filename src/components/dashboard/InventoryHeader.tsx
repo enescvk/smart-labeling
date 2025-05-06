@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -30,7 +30,8 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
       restaurantId: selectedRestaurant?.id,
       restaurantName: selectedRestaurant?.name,
       isLoading,
-      hasError: !!error
+      hasError: !!error,
+      errorMessage: error?.message
     });
     
     return () => {
@@ -38,13 +39,18 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
     };
   }, [items, selectedRestaurant, isLoading, error]);
 
+  // Handle refreshing the page
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   // Show error state if there was a problem loading inventory data
   if (error) {
     console.error("Error loading inventory items:", error);
     
     // Check if the error is related to permissions or recursion
     const isPermissionError = error.message?.includes("permission") || 
-                             error.message?.includes("recursion") ||
+                             error.message?.includes("recursion") || 
                              error.message?.includes("policy");
     
     return (
@@ -66,12 +72,18 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
           <p className="text-kitchen-500 mt-1">{error.message}</p>
           {isPermissionError && (
             <p className="text-kitchen-500 mt-2">
-              This could be a permission issue. Try refreshing the page or logging out and back in.
+              This is a known permission issue with the database policies. Please click the refresh button below.
             </p>
           )}
-          <div className="mt-4">
-            <Button onClick={() => window.location.reload()} variant="outline" size="sm">
-              Retry
+          <div className="mt-4 flex justify-center">
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh Page
             </Button>
           </div>
         </div>
