@@ -433,6 +433,14 @@ export type Database = {
         Args: { user_id?: string }
         Returns: string[]
       }
+      get_user_restaurant_ids_for_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      get_user_restaurant_ids_for_rls: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       is_admin_of_restaurant: {
         Args: { p_restaurant_id: string }
         Returns: boolean
