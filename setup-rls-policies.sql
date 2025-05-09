@@ -4,8 +4,16 @@ CREATE OR REPLACE FUNCTION public.get_user_restaurant_ids(user_id UUID DEFAULT a
 RETURNS SETOF UUID
 LANGUAGE plpgsql
 SECURITY DEFINER AS $$
+DECLARE
+  rest_id UUID;
 BEGIN
-  RETURN QUERY SELECT restaurant_id FROM public.restaurant_members WHERE restaurant_members.user_id = $1;
+  FOR rest_id IN 
+    SELECT restaurant_id FROM public.restaurant_members 
+    WHERE restaurant_members.user_id = $1
+  LOOP
+    RETURN NEXT rest_id;
+  END LOOP;
+  RETURN;
 END;
 $$;
 

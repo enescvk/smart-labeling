@@ -22,10 +22,6 @@ export const getInventoryItems = async (restaurantId?: string | null): Promise<I
 
     if (error) {
       console.error("Error fetching inventory items:", error);
-      toast.error("Failed to fetch inventory items", {
-        id: "inventory-error",
-        duration: 5000,
-      });
       throw error;
     }
 
@@ -94,10 +90,6 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching active inventory items:", error);
-      toast.error("Failed to fetch inventory items", {
-        id: "inventory-active-error",
-        duration: 5000,
-      });
       throw error;
     }
 
@@ -108,32 +100,33 @@ export const getActiveInventoryItems = async (restaurantId?: string | null): Pro
     }
 
     // Now get all the unique user IDs from the prepared_by field
-    const userIds = [...new Set(data.map(item => item.prepared_by))];
+    const userIds = [...new Set(data.map(item => item.prepared_by))].filter(Boolean);
     
     // Fetch profile information for these users
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name")
-      .in("id", userIds);
-      
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      // Continue with the inventory data even if profiles can't be fetched
-    }
+    let profilesMap = {};
     
-    // Create a map of user IDs to profile data for easier lookup
-    const profilesMap = {};
-    if (profilesData) {
-      profilesData.forEach(profile => {
-        profilesMap[profile.id] = profile;
-      });
+    if (userIds.length > 0) {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name")
+        .in("id", userIds);
+        
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        // Continue with the inventory data even if profiles can't be fetched
+      } else if (profilesData) {
+        // Create a map of user IDs to profile data for easier lookup
+        profilesData.forEach(profile => {
+          profilesMap[profile.id] = profile;
+        });
+      }
     }
     
     // Map the database items and add profile information
     const items = data.map(item => {
       return {
         ...mapDatabaseItem(item),
-        preparedByProfile: profilesMap[item.prepared_by] || null
+        preparedByProfile: item.prepared_by ? profilesMap[item.prepared_by] || null : null
       };
     });
 
@@ -164,10 +157,6 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
 
     if (error) {
       console.error("Error fetching inventory item:", error);
-      toast.error("Failed to fetch inventory item", {
-        id: "inventory-item-error",
-        duration: 5000,
-      });
       throw error;
     }
     
@@ -177,21 +166,25 @@ export const getItemById = async (id: string, restaurantId?: string | null): Pro
     }
     
     // Get profile information for the preparer
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name")
-      .eq("id", data.prepared_by)
-      .single();
-    
-    if (profileError) {
-      console.error("Error fetching profile:", profileError);
-      // Continue with the inventory data even if profile can't be fetched
+    let preparedByProfile = null;
+    if (data.prepared_by) {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name")
+        .eq("id", data.prepared_by)
+        .maybeSingle();
+      
+      if (!profileError) {
+        preparedByProfile = profileData;
+      } else {
+        console.error("Error fetching profile:", profileError);
+      }
     }
 
     const item = mapDatabaseItem(data);
     
     // Add the profile information
-    item.preparedByProfile = profileError ? null : profileData;
+    item.preparedByProfile = preparedByProfile;
 
     console.log(`Found inventory item with ID: ${id} for restaurant ${restaurantId}`);
     return item;

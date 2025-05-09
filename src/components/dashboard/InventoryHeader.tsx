@@ -48,11 +48,6 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
   if (error) {
     console.error("Error loading inventory items:", error);
     
-    // Check if the error is related to permissions or recursion
-    const isPermissionError = error.message?.includes("permission") || 
-                             error.message?.includes("recursion") || 
-                             error.message?.includes("policy");
-    
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-2">
@@ -70,11 +65,6 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
         <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg bg-kitchen-50">
           <h3 className="text-lg font-medium text-red-600">Error loading inventory items</h3>
           <p className="text-kitchen-500 mt-1">{error.message}</p>
-          {isPermissionError && (
-            <p className="text-kitchen-500 mt-2">
-              This is a known permission issue with the database policies. Please click the refresh button below.
-            </p>
-          )}
           <div className="mt-4 flex justify-center">
             <Button 
               onClick={handleRefresh} 
