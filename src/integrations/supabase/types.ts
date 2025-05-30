@@ -20,6 +20,7 @@ export type Database = {
           product: string
           restaurant_id: string | null
           status: string
+          status_updated_at: string | null
         }
         Insert: {
           container_type?: string
@@ -31,6 +32,7 @@ export type Database = {
           product: string
           restaurant_id?: string | null
           status?: string
+          status_updated_at?: string | null
         }
         Update: {
           container_type?: string
@@ -42,6 +44,7 @@ export type Database = {
           product?: string
           restaurant_id?: string | null
           status?: string
+          status_updated_at?: string | null
         }
         Relationships: [
           {

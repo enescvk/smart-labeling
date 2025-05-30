@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
@@ -8,8 +7,10 @@ import {
   getRecentItems, 
   getExpiringItems,
   getExpiredItems,
+  getInventoryItems
 } from "../services/inventoryService";
 import { DashboardView } from "../components/DashboardView";
+import { AnalyticsChart } from "../components/dashboard/AnalyticsChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, ChartPieIcon, LineChart, LayoutDashboard } from "lucide-react";
@@ -21,6 +22,16 @@ const Dashboard: React.FC = () => {
   
   console.log("Dashboard page - Selected restaurant:", selectedRestaurant?.name, restaurantId);
   
+  // Fetch all inventory items for analytics
+  const { data: allInventoryItems = [], isLoading: allItemsLoading } = useQuery({
+    queryKey: ['inventoryItems', 'all', restaurantId],
+    queryFn: () => {
+      console.log("Dashboard: Fetching all inventory items for restaurant:", restaurantId);
+      return getInventoryItems(restaurantId);
+    },
+    enabled: !!restaurantId
+  });
+
   // Fetch all data needed for dashboard
   const { data: activeItems = [], isLoading: activeLoading } = useQuery({
     queryKey: ['inventoryItems', 'active', restaurantId],
@@ -58,11 +69,7 @@ const Dashboard: React.FC = () => {
     enabled: !!restaurantId
   });
 
-  const isLoading = activeLoading || recentLoading || expiringLoading || expiredLoading;
-  const allItems = [...activeItems, ...expiredItems, ...recentItems];
-  
-  // Log item count
-  console.log(`Dashboard: Found total of ${allItems.length} items for restaurant ${restaurantId}`);
+  const isLoading = allItemsLoading;
   
   // Animation variants
   const containerVariants = {
@@ -95,8 +102,12 @@ const Dashboard: React.FC = () => {
           </p>
         </motion.header>
 
-        <Tabs defaultValue="consumption" className="space-y-6">
+        <Tabs defaultValue="analytics" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="analytics">
+              <BarChart className="h-4 w-4 mr-2" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="consumption">
               <LineChart className="h-4 w-4 mr-2" />
               Consumption
@@ -111,6 +122,18 @@ const Dashboard: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="analytics" className="space-y-6">
+            {isLoading ? (
+              <Card>
+                <CardContent className="h-[500px] flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </CardContent>
+              </Card>
+            ) : (
+              <AnalyticsChart items={allInventoryItems} />
+            )}
+          </TabsContent>
+
           <TabsContent value="consumption" className="space-y-6">
             <Card>
               <CardHeader>
@@ -122,7 +145,7 @@ const Dashboard: React.FC = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
                 ) : (
-                  <DashboardView items={allItems} />
+                  <DashboardView items={allInventoryItems} />
                 )}
               </CardContent>
             </Card>

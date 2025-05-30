@@ -8,6 +8,7 @@ export interface InventoryItem {
   containerType: string;
   status: "active" | "used" | "waste";
   createdAt: string;
+  statusUpdatedAt: string;
   restaurantId?: string;
   preparedByProfile?: {
     first_name?: string | null;
@@ -26,6 +27,7 @@ export const mapDatabaseItem = (item: any): InventoryItem => {
     containerType: item.container_type || "Container",
     status: item.status,
     createdAt: item.created_at,
+    statusUpdatedAt: item.status_updated_at,
     restaurantId: item.restaurant_id,
     preparedByProfile: item.profiles
   };
