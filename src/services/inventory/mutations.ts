@@ -5,7 +5,7 @@ import { InventoryItem, mapDatabaseItem } from "./types";
 
 // Add inventory item
 export const addInventoryItem = async (
-  item: Omit<InventoryItem, "createdAt">, 
+  item: Omit<InventoryItem, "createdAt" | "statusUpdatedAt">, 
   restaurantId?: string | null
 ): Promise<InventoryItem> => {
   try {
