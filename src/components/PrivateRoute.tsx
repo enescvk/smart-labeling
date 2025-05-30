@@ -21,20 +21,25 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const [isCheckingRestaurant, setIsCheckingRestaurant] = useState(true);
   const [hasRestaurant, setHasRestaurant] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
   const location = useLocation();
-  const { selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant } = useRestaurantStore();
+  const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
 
   useEffect(() => {
     const checkUserRestaurant = async () => {
-      try {
-        if (!user) {
+      // Don't run if we're still loading auth or have already checked
+      if (isLoading || hasChecked || !user) {
+        if (!user && !isLoading) {
           console.log("No user found, setting isCheckingRestaurant to false");
           setIsCheckingRestaurant(false);
-          return;
         }
+        return;
+      }
 
-        console.log("Checking user restaurant for user:", user.id);
-        
+      console.log("Starting restaurant check for user:", user.id);
+      setHasChecked(true);
+      
+      try {
         // Check if the user has any restaurants
         const restaurants = await getUserRestaurants();
         console.log("Found restaurants:", restaurants.length);
@@ -43,7 +48,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
         if (restaurants.length === 0 && user.user_metadata?.restaurant_name) {
           try {
             console.log("Creating restaurant from metadata:", user.user_metadata.restaurant_name);
-            const newRestaurant = await createRestaurant(user.user_metadata.restaurant_name as string);
+            await createRestaurant(user.user_metadata.restaurant_name as string);
             toast.success("Restaurant created successfully", {
               description: `${user.user_metadata.restaurant_name} has been set up for you.`
             });
@@ -53,24 +58,23 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
             toast.error("Failed to create restaurant", {
               description: error.message || "Please try again or contact support."
             });
+            setHasRestaurant(false);
           }
         } else if (restaurants.length > 0) {
           console.log("User has", restaurants.length, "restaurants");
           setHasRestaurant(true);
           
-          // Auto-select the default restaurant if available and no restaurant is currently selected
+          // Set the first restaurant if no restaurant is currently selected
           if (!selectedRestaurant) {
-            console.log("No restaurant selected, loading first restaurant");
-            await loadFirstRestaurant();
-          } else {
-            console.log("Restaurant already selected:", selectedRestaurant.name);
+            console.log("Setting first restaurant as selected");
+            setSelectedRestaurant(restaurants[0]);
           }
         } else {
           console.log("No restaurants found for user and no metadata restaurant name");
           setHasRestaurant(false);
         }
 
-        // Check admin status if there's a selected restaurant
+        // Check admin status if there's a selected restaurant or restaurants available
         const currentRestaurant = selectedRestaurant || (restaurants.length > 0 ? restaurants[0] : null);
         if (currentRestaurant) {
           try {
@@ -93,16 +97,15 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
 
       } catch (error) {
         console.error("Error checking restaurant:", error);
+        setHasRestaurant(false);
       } finally {
         console.log("Setting isCheckingRestaurant to false");
         setIsCheckingRestaurant(false);
       }
     };
 
-    if (!isLoading) {
-      checkUserRestaurant();
-    }
-  }, [user, isLoading, selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant]);
+    checkUserRestaurant();
+  }, [user, isLoading, hasChecked]); // Simplified dependencies
 
   console.log("PrivateRoute state:", {
     isLoading,
@@ -110,7 +113,8 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     hasRestaurant,
     hasUser: !!user,
     hasSelectedRestaurant: !!selectedRestaurant,
-    requiresRestaurant
+    requiresRestaurant,
+    hasChecked
   });
 
   if (isLoading) {
