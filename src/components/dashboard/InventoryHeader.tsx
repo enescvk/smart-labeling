@@ -3,17 +3,8 @@ import React, { useEffect } from "react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
 import { InventoryCard } from "@/components/InventoryCard";
 import { InventoryItem } from "@/services/inventory/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { PlusCircle, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 interface InventoryHeaderProps {
   items: InventoryItem[];
@@ -52,14 +43,6 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-xl font-semibold text-kitchen-800">Inventory</h2>
-          <div className="flex space-x-2">
-            <Button asChild size="sm" variant="outline" className="gap-1">
-              <Link to="/create-label">
-                <PlusCircle className="w-4 h-4" />
-                <span>New Item</span>
-              </Link>
-            </Button>
-          </div>
         </div>
         
         <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg bg-kitchen-50">
@@ -87,14 +70,6 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
         <h2 className="text-xl font-semibold text-kitchen-800">
           Inventory {selectedRestaurant?.name ? `for ${selectedRestaurant.name}` : ''}
         </h2>
-        <div className="flex space-x-2">
-          <Button asChild size="sm" variant="outline" className="gap-1">
-            <Link to="/create-label">
-              <PlusCircle className="w-4 h-4" />
-              <span>New Item</span>
-            </Link>
-          </Button>
-        </div>
       </div>
       
       {isLoading ? (
@@ -110,24 +85,12 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({ items, isLoadi
           ))}
         </div>
       ) : selectedRestaurant ? (
-        <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg">
-          <h3 className="text-lg font-medium text-kitchen-600">No inventory items found</h3>
-          <p className="text-kitchen-500 mt-1">
-            {`No items found for restaurant: ${selectedRestaurant.name}`}
-          </p>
-          <div className="mt-4">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/create-label" className="inline-flex items-center">
-                <PlusCircle className="w-4 h-4 mr-1" />
-                Create Item
-              </Link>
-            </Button>
-          </div>
+        <div className="text-center py-10">
+          <p className="text-kitchen-500">No inventory items found</p>
         </div>
       ) : (
-        <div className="text-center py-10 border border-dashed border-kitchen-200 rounded-lg">
-          <h3 className="text-lg font-medium text-kitchen-600">Please select a restaurant</h3>
-          <p className="text-kitchen-500 mt-1">Select a restaurant to view inventory items</p>
+        <div className="text-center py-10">
+          <p className="text-kitchen-500">Please select a restaurant</p>
         </div>
       )}
     </div>
