@@ -69,7 +69,7 @@ function App() {
                   } />
                   <Route path="/dashboard" element={
                     <PrivateRoute requiresRestaurant={true}>
-                      {({ isAdmin }) => isAdmin ? <Dashboard /> : <Navigate to="/" />}
+                      <Dashboard />
                     </PrivateRoute>
                   } />
                   <Route path="/settings" element={<PrivateRoute requiresRestaurant={false}><Settings /></PrivateRoute>} />

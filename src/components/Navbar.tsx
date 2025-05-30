@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -33,8 +34,8 @@ export const Navbar: React.FC = () => {
       
       try {
         const { data, error } = await supabase
-          .rpc('is_admin_of_restaurant', { 
-            p_restaurant_id: selectedRestaurant.id 
+          .rpc('check_is_restaurant_admin', { 
+            restaurant_id: selectedRestaurant.id 
           });
         
         if (error) {
@@ -76,12 +77,12 @@ export const Navbar: React.FC = () => {
       icon: HistoryIcon,
       active: location.pathname === "/history",
     },
-    ...(isAdmin ? [{
+    {
       href: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
       active: location.pathname === "/dashboard",
-    }] : []),
+    },
   ];
 
   return (
