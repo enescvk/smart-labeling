@@ -25,96 +25,93 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const { selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant } = useRestaurantStore();
 
   useEffect(() => {
-    // Add a timeout to prevent infinite loading state
-    const timeoutId = setTimeout(() => {
-      if (isCheckingRestaurant && user) {
-        console.log("Restaurant check timed out, forcing completion");
-        setIsCheckingRestaurant(false);
-      }
-    }, 5000); // 5 seconds timeout
-    
     const checkUserRestaurant = async () => {
       try {
-        if (user) {
-          console.log("Checking user restaurant for user:", user.id);
-          // Check if the user has any restaurants
-          const restaurants = await getUserRestaurants();
-          
-          // If no restaurants and userMetadata has restaurant_name, create one
-          if (restaurants.length === 0 && user.user_metadata?.restaurant_name) {
-            try {
-              console.log("Creating restaurant from metadata:", user.user_metadata.restaurant_name);
-              const newRestaurant = await createRestaurant(user.user_metadata.restaurant_name as string);
-              toast.success("Restaurant created successfully", {
-                description: `${user.user_metadata.restaurant_name} has been set up for you.`
-              });
-              setHasRestaurant(true);
-            } catch (error: any) {
-              console.error("Error creating restaurant:", error);
-              toast.error("Failed to create restaurant", {
-                description: error.message || "Please try again or contact support."
-              });
-            }
-          } else if (restaurants.length > 0) {
-            console.log("User has", restaurants.length, "restaurants");
-            setHasRestaurant(true);
-            
-            // Auto-select the default restaurant if available
-            if (!selectedRestaurant) {
-              const defaultId = await getDefaultRestaurant();
-              console.log("Checking for default restaurant in PrivateRoute:", defaultId);
-              
-              if (defaultId) {
-                const defaultRestaurant = restaurants.find(r => r.id === defaultId);
-                if (defaultRestaurant) {
-                  console.log("Found default restaurant in PrivateRoute:", defaultRestaurant.name);
-                }
-              }
-              
-              // Load restaurant selection (this will use the default if available)
-              if (!selectedRestaurant) {
-                console.log("Auto-selecting restaurant in PrivateRoute");
-                await loadFirstRestaurant();
-              }
-            }
-          } else {
-            console.log("No restaurants found for user");
-          }
+        if (!user) {
+          console.log("No user found, setting isCheckingRestaurant to false");
+          setIsCheckingRestaurant(false);
+          return;
+        }
 
-          // Check admin status if there's a selected restaurant
-          if (selectedRestaurant) {
-            try {
-              // Use the RPC function to check admin status
-              const { data, error } = await supabase
-                .rpc('check_is_restaurant_admin', { 
-                  restaurant_id: selectedRestaurant.id 
-                });
-              
-              if (error) {
-                console.error("Error checking admin status:", error);
-              } else {
-                setIsAdmin(!!data);
-              }
-            } catch (error) {
-              console.error("Error in admin check:", error);
+        console.log("Checking user restaurant for user:", user.id);
+        
+        // Check if the user has any restaurants
+        const restaurants = await getUserRestaurants();
+        console.log("Found restaurants:", restaurants.length);
+        
+        // If no restaurants and userMetadata has restaurant_name, create one
+        if (restaurants.length === 0 && user.user_metadata?.restaurant_name) {
+          try {
+            console.log("Creating restaurant from metadata:", user.user_metadata.restaurant_name);
+            const newRestaurant = await createRestaurant(user.user_metadata.restaurant_name as string);
+            toast.success("Restaurant created successfully", {
+              description: `${user.user_metadata.restaurant_name} has been set up for you.`
+            });
+            setHasRestaurant(true);
+          } catch (error: any) {
+            console.error("Error creating restaurant:", error);
+            toast.error("Failed to create restaurant", {
+              description: error.message || "Please try again or contact support."
+            });
+          }
+        } else if (restaurants.length > 0) {
+          console.log("User has", restaurants.length, "restaurants");
+          setHasRestaurant(true);
+          
+          // Auto-select the default restaurant if available and no restaurant is currently selected
+          if (!selectedRestaurant) {
+            console.log("No restaurant selected, loading first restaurant");
+            await loadFirstRestaurant();
+          } else {
+            console.log("Restaurant already selected:", selectedRestaurant.name);
+          }
+        } else {
+          console.log("No restaurants found for user and no metadata restaurant name");
+          setHasRestaurant(false);
+        }
+
+        // Check admin status if there's a selected restaurant
+        const currentRestaurant = selectedRestaurant || (restaurants.length > 0 ? restaurants[0] : null);
+        if (currentRestaurant) {
+          try {
+            console.log("Checking admin status for restaurant:", currentRestaurant.id);
+            const { data, error } = await supabase
+              .rpc('check_is_restaurant_admin', { 
+                restaurant_id: currentRestaurant.id 
+              });
+            
+            if (error) {
+              console.error("Error checking admin status:", error);
+            } else {
+              console.log("Admin status:", !!data);
+              setIsAdmin(!!data);
             }
+          } catch (error) {
+            console.error("Error in admin check:", error);
           }
         }
-        setIsCheckingRestaurant(false);
+
       } catch (error) {
         console.error("Error checking restaurant:", error);
+      } finally {
+        console.log("Setting isCheckingRestaurant to false");
         setIsCheckingRestaurant(false);
       }
     };
 
-    if (!isLoading && user) {
+    if (!isLoading) {
       checkUserRestaurant();
-    } else if (!isLoading && !user) {
-      setIsCheckingRestaurant(false);
     }
-    
-    return () => clearTimeout(timeoutId);
   }, [user, isLoading, selectedRestaurant, loadFirstRestaurant, getDefaultRestaurant]);
+
+  console.log("PrivateRoute state:", {
+    isLoading,
+    isCheckingRestaurant,
+    hasRestaurant,
+    hasUser: !!user,
+    hasSelectedRestaurant: !!selectedRestaurant,
+    requiresRestaurant
+  });
 
   if (isLoading) {
     return (
