@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { removeRestaurantMember } from "@/services/restaurants/memberService";
@@ -48,26 +49,38 @@ export const CurrentMembers = ({ members, isLoading, isAdmin }: CurrentMembersPr
   }
 
   return (
-    <div className="space-y-2">
-      {members.map((member) => (
-        <div key={member.id} className="flex justify-between items-center p-3 border rounded-md">
-          <div>
-            <h4 className="font-medium">{member.user?.email}</h4>
-            <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
-          </div>
-          {isAdmin && (
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={() => removeMemberMutation.mutate(member.id)}
-              disabled={removeMemberMutation.isPending}
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ))}
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>First Name</TableHead>
+          <TableHead>Last Name</TableHead>
+          <TableHead>Email Address</TableHead>
+          <TableHead>Role</TableHead>
+          {isAdmin && <TableHead>Actions</TableHead>}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {members.map((member) => (
+          <TableRow key={member.id}>
+            <TableCell>{member.user?.first_name || '-'}</TableCell>
+            <TableCell>{member.user?.last_name || '-'}</TableCell>
+            <TableCell>{member.user?.email}</TableCell>
+            <TableCell className="capitalize">{member.role}</TableCell>
+            {isAdmin && (
+              <TableCell>
+                <Button 
+                  size="sm" 
+                  variant="destructive"
+                  onClick={() => removeMemberMutation.mutate(member.id)}
+                  disabled={removeMemberMutation.isPending}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            )}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
-
