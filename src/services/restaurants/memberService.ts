@@ -43,6 +43,55 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
+    // Use RPC function to get restaurant members securely
+    const { data: memberData, error: memberError } = await supabase
+      .rpc('get_restaurant_members_with_profiles', {
+        p_restaurant_id: restaurantId
+      });
+
+    if (memberError) {
+      console.error("Error fetching restaurant members:", memberError);
+      
+      // Fallback to separate queries if RPC fails
+      console.log("Falling back to separate queries...");
+      return await getRestaurantMembersFallback(restaurantId);
+    }
+
+    if (!memberData || memberData.length === 0) {
+      console.log("No members found for restaurant:", restaurantId);
+      return [];
+    }
+
+    console.log("Found members via RPC:", memberData);
+
+    const formattedMembers: RestaurantMember[] = memberData.map((member: any) => ({
+      id: member.id,
+      user_id: member.user_id,
+      restaurant_id: member.restaurant_id,
+      role: member.role as 'admin' | 'staff',
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      user: {
+        email: member.username || member.email || 'Unknown Email',
+        first_name: member.first_name || null,
+        last_name: member.last_name || null,
+      }
+    }));
+
+    console.log("Formatted members:", formattedMembers);
+    return formattedMembers;
+  } catch (err) {
+    console.error("Error in getRestaurantMembers:", err);
+    
+    // Fallback to separate queries
+    console.log("Falling back to separate queries due to error...");
+    return await getRestaurantMembersFallback(restaurantId);
+  }
+};
+
+// Fallback function using separate queries
+const getRestaurantMembersFallback = async (restaurantId: string): Promise<RestaurantMember[]> => {
+  try {
     // First, get the restaurant members
     const { data: members, error: membersError } = await supabase
       .from('restaurant_members')
@@ -57,7 +106,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       .eq('restaurant_id', restaurantId);
       
     if (membersError) {
-      console.error("Error fetching restaurant members:", membersError);
+      console.error("Error fetching restaurant members in fallback:", membersError);
       toast.error("Error fetching team members. Please refresh the page.", {
         id: "member-error",
         duration: 5000,
@@ -66,15 +115,15 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
     }
     
     if (!members || members.length === 0) {
-      console.log("No members found for restaurant:", restaurantId);
+      console.log("No members found for restaurant in fallback:", restaurantId);
       return [];
     }
 
-    console.log("Found members:", members);
+    console.log("Found members in fallback:", members);
     
     // Now fetch the profiles for these members using separate query
     const userIds = members.map(member => member.user_id);
-    console.log("Fetching profiles for user IDs:", userIds);
+    console.log("Fetching profiles for user IDs in fallback:", userIds);
     
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
@@ -82,7 +131,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       .in("id", userIds);
     
     if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
+      console.error("Error fetching profiles in fallback:", profilesError);
       // Return members without profile data if profiles can't be fetched
       const formattedMembersWithoutProfiles: RestaurantMember[] = members.map(member => ({
         id: member.id,
@@ -101,7 +150,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       return formattedMembersWithoutProfiles;
     }
     
-    console.log("Fetched profiles:", profiles);
+    console.log("Fetched profiles in fallback:", profiles);
     
     // Create a map for quick profile lookup
     const profileMap = new Map();
@@ -129,10 +178,10 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       };
     });
 
-    console.log("Formatted members:", formattedMembers);
+    console.log("Formatted members in fallback:", formattedMembers);
     return formattedMembers;
   } catch (err) {
-    console.error("Error in getRestaurantMembers:", err);
+    console.error("Error in getRestaurantMembersFallback:", err);
     toast.error("Unexpected error fetching team members.", {
       id: "member-error",
       duration: 5000,

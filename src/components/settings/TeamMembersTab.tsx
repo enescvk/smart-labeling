@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { 
   Card, 
@@ -14,6 +15,7 @@ import { AddTeamMemberForm } from "./team/AddTeamMemberForm";
 import { CurrentMembers } from "./team/CurrentMembers";
 import { PendingInvitations } from "./PendingInvitations";
 import { getPendingInvitations } from "@/services/restaurants/invitationService";
+import { useEffect } from "react";
 
 type TeamMembersTabProps = {
   selectedRestaurantId: string | null;
@@ -23,29 +25,48 @@ export const TeamMembersTab = ({ selectedRestaurantId }: TeamMembersTabProps) =>
   const {
     data: members = [],
     isLoading: isLoadingMembers,
+    refetch: refetchMembers,
   } = useQuery({
     queryKey: ['restaurant-members', selectedRestaurantId],
     queryFn: () => selectedRestaurantId ? getRestaurantMembers(selectedRestaurantId) : Promise.resolve([]),
-    enabled: !!selectedRestaurantId
+    enabled: !!selectedRestaurantId,
+    staleTime: 0, // Always refetch when switching restaurants
+    gcTime: 0, // Don't cache the data
   });
 
   const {
     data: isAdmin = false,
-    isLoading: isLoadingAdminStatus
+    isLoading: isLoadingAdminStatus,
+    refetch: refetchAdminStatus,
   } = useQuery({
     queryKey: ['restaurant-admin', selectedRestaurantId],
     queryFn: () => selectedRestaurantId ? isRestaurantAdmin(selectedRestaurantId) : Promise.resolve(false),
-    enabled: !!selectedRestaurantId
+    enabled: !!selectedRestaurantId,
+    staleTime: 0, // Always refetch when switching restaurants
+    gcTime: 0, // Don't cache the data
   });
 
   const {
     data: pendingInvitations = [],
     isLoading: isLoadingPendingInvitations,
+    refetch: refetchInvitations,
   } = useQuery({
     queryKey: ['pending-invitations', selectedRestaurantId],
     queryFn: () => selectedRestaurantId ? getPendingInvitations(selectedRestaurantId) : Promise.resolve([]),
-    enabled: !!selectedRestaurantId
+    enabled: !!selectedRestaurantId,
+    staleTime: 0, // Always refetch when switching restaurants
+    gcTime: 0, // Don't cache the data
   });
+
+  // Force refetch when restaurant changes
+  useEffect(() => {
+    if (selectedRestaurantId) {
+      console.log("Restaurant changed to:", selectedRestaurantId, "- refetching team data");
+      refetchMembers();
+      refetchAdminStatus();
+      refetchInvitations();
+    }
+  }, [selectedRestaurantId, refetchMembers, refetchAdminStatus, refetchInvitations]);
 
   if (!selectedRestaurantId) {
     return (
