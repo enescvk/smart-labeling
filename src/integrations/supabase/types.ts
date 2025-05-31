@@ -432,6 +432,21 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: string[]
       }
+      get_restaurant_members_with_profiles: {
+        Args: { p_restaurant_id: string }
+        Returns: {
+          id: string
+          user_id: string
+          restaurant_id: string
+          role: string
+          created_at: string
+          updated_at: string
+          username: string
+          first_name: string
+          last_name: string
+          email: string
+        }[]
+      }
       get_user_restaurant_ids: {
         Args: { user_id?: string }
         Returns: string[]

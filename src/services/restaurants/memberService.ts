@@ -47,7 +47,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
     const { data: memberData, error: memberError } = await supabase
       .rpc('get_restaurant_members_with_profiles', {
         p_restaurant_id: restaurantId
-      });
+      }) as { data: any[] | null, error: any };
 
     if (memberError) {
       console.error("Error fetching restaurant members:", memberError);
@@ -57,7 +57,7 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       return await getRestaurantMembersFallback(restaurantId);
     }
 
-    if (!memberData || memberData.length === 0) {
+    if (!memberData || !Array.isArray(memberData) || memberData.length === 0) {
       console.log("No members found for restaurant:", restaurantId);
       return [];
     }
