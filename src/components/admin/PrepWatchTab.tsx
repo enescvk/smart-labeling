@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,13 +27,18 @@ export interface PrepWatchRule {
   id: string;
   food_type: string;
   minimum_count: number;
-  frequency: 'daily' | 'weekly' | 'monthly';
+  frequency: 'daily' | 'weekly';
   check_hour: number;
   check_minute: number;
   check_period?: 'AM' | 'PM';
+  check_day?: number; // 0 = Sunday, 6 = Saturday
   notify_email: string;
   restaurant_id?: string;
 }
+
+const DAYS_OF_WEEK = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+];
 
 export const PrepWatchTab = () => {
   const [showAddRule, setShowAddRule] = useState(false);
@@ -84,6 +90,18 @@ export const PrepWatchTab = () => {
     );
   }
 
+  const formatSchedule = (rule: PrepWatchRule) => {
+    const time = `${rule.check_hour % 12 || 12}:${String(rule.check_minute).padStart(2, '0')} ${rule.check_hour >= 12 ? 'PM' : 'AM'}`;
+    
+    if (rule.frequency === 'daily') {
+      return `Daily at ${time}`;
+    } else if (rule.frequency === 'weekly' && rule.check_day !== undefined) {
+      return `Weekly on ${DAYS_OF_WEEK[rule.check_day]} at ${time}`;
+    }
+    
+    return `${rule.frequency} at ${time}`;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -106,8 +124,7 @@ export const PrepWatchTab = () => {
                 <TableRow>
                   <TableHead>Food Type</TableHead>
                   <TableHead>Minimum Count</TableHead>
-                  <TableHead>Check Frequency</TableHead>
-                  <TableHead>Check Time</TableHead>
+                  <TableHead>Schedule</TableHead>
                   <TableHead>Notification Email</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -117,10 +134,7 @@ export const PrepWatchTab = () => {
                   <TableRow key={rule.id}>
                     <TableCell>{rule.food_type}</TableCell>
                     <TableCell>{rule.minimum_count}</TableCell>
-                    <TableCell className="capitalize">{rule.frequency}</TableCell>
-                    <TableCell>
-                      {rule.check_hour % 12 || 12}:{String(rule.check_minute).padStart(2, '0')} {rule.check_hour >= 12 ? 'PM' : 'AM'}
-                    </TableCell>
+                    <TableCell>{formatSchedule(rule)}</TableCell>
                     <TableCell>{rule.notify_email}</TableCell>
                     <TableCell>
                       <Button

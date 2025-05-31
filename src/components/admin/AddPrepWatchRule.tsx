@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -35,12 +36,24 @@ import { useAuth } from "@/context/AuthContext";
 const formSchema = z.object({
   food_type: z.string().min(1, "Food type is required"),
   minimum_count: z.number().min(1, "Minimum count must be at least 1"),
-  frequency: z.enum(["daily", "weekly", "monthly"]),
+  frequency: z.enum(["daily", "weekly"]),
   check_hour: z.number().min(1).max(12),
   check_minute: z.number().min(0).max(59),
   check_period: z.enum(["AM", "PM"]),
+  check_day: z.number().min(0).max(6).optional(), // 0 = Sunday, 6 = Saturday
   notify_email: z.string().email("Invalid email address"),
-});
+}).refine(
+  (data) => {
+    if (data.frequency === "weekly") {
+      return data.check_day !== undefined;
+    }
+    return true;
+  },
+  {
+    message: "Day is required for weekly frequency",
+    path: ["check_day"],
+  }
+);
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -48,6 +61,16 @@ interface AddPrepWatchRuleProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const DAYS_OF_WEEK = [
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
+];
 
 export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) => {
   const { selectedRestaurant } = useRestaurantStore();
@@ -66,6 +89,8 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
       notify_email: user?.email || '',
     },
   });
+
+  const watchFrequency = form.watch("frequency");
 
   const { data: foodTypes = [] } = useQuery({
     queryKey: ["food-types", selectedRestaurant?.id],
@@ -106,6 +131,7 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
           check_hour: hour24,
           check_minute: data.check_minute,
           check_period: data.check_period,
+          check_day: data.check_day,
           notify_email: data.notify_email,
         });
 
@@ -207,13 +233,42 @@ export const AddPrepWatchRule = ({ open, onOpenChange }: AddPrepWatchRuleProps) 
                     <SelectContent>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {watchFrequency === "weekly" && (
+              <FormField
+                control={form.control}
+                name="check_day"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Day of Week</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      value={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a day" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {DAYS_OF_WEEK.map((day) => (
+                          <SelectItem key={day.value} value={day.value.toString()}>
+                            {day.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex gap-4">
               <FormField
