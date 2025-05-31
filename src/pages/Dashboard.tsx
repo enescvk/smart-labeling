@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useMemo } from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -14,13 +13,16 @@ import { DashboardView } from "../components/DashboardView";
 import { AnalyticsChart } from "../components/dashboard/AnalyticsChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, ChartPieIcon, LineChart, LayoutDashboard } from "lucide-react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
-import { startOfMonth } from "date-fns";
+import { startOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { useState } from "react";
 
 const Dashboard: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
   const restaurantId = selectedRestaurant?.id;
+  const [consumptionStatusFilter, setConsumptionStatusFilter] = useState<string>("all");
   
   console.log("Dashboard page - Selected restaurant:", selectedRestaurant?.name, restaurantId);
   
@@ -37,6 +39,21 @@ const Dashboard: React.FC = () => {
     },
     enabled: !!restaurantId
   });
+
+  // Filter items by prep date (month-to-date) and status for consumption graph
+  const filteredConsumptionItems = useMemo(() => {
+    let filtered = allInventoryItems.filter(item => {
+      const prepDate = parseISO(item.preparedDate);
+      return isWithinInterval(prepDate, { start: monthStartDate, end: todayDate });
+    });
+
+    // Apply status filter
+    if (consumptionStatusFilter !== "all") {
+      filtered = filtered.filter(item => item.status === consumptionStatusFilter);
+    }
+
+    return filtered;
+  }, [allInventoryItems, monthStartDate, todayDate, consumptionStatusFilter]);
 
   // Fetch all data needed for dashboard
   const { data: activeItems = [], isLoading: activeLoading } = useQuery({
@@ -147,7 +164,24 @@ const Dashboard: React.FC = () => {
           <TabsContent value="consumption" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Product Consumption Over Time</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Product Consumption Over Time</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Status Filter:
+                    </label>
+                    <Select value={consumptionStatusFilter} onValueChange={setConsumptionStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="used">Used</SelectItem>
+                        <SelectItem value="waste">Wasted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -155,7 +189,7 @@ const Dashboard: React.FC = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
                 ) : (
-                  <DashboardView items={allInventoryItems} />
+                  <DashboardView items={filteredConsumptionItems} />
                 )}
               </CardContent>
             </Card>
