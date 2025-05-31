@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { format, subMonths, isWithinInterval, parse, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths, isWithinInterval, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { 
   LineChart, 
   Line, 
@@ -46,15 +46,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items }) => {
     const endDate = new Date();
     const startDate = subMonths(endDate, parseInt(selectedPeriod));
     
-    // Filter items by selected product and period
+    // Filter items by selected product and period using prepared date
     const filteredItems = items.filter(item => {
-      // Parse date string to Date object for comparison
-      const itemDate = new Date(item.createdAt);
+      // Parse prepared date string to Date object for comparison
+      const itemDate = parseISO(item.preparedDate);
       
       // Filter by product if a specific one is selected
       const productMatch = selectedProduct === "all" || item.product === selectedProduct;
       
-      // Filter by date range
+      // Filter by date range using prepared date
       const dateMatch = isWithinInterval(itemDate, { start: startDate, end: endDate });
       
       return productMatch && dateMatch;
@@ -67,15 +67,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items }) => {
       months.unshift(format(monthDate, "MMM yyyy"));
     }
 
-    // Count items by month and product
+    // Count items by month and product using prepared date
     const monthlyData: { [month: string]: { [product: string]: number } } = {};
     months.forEach(month => {
       monthlyData[month] = {};
     });
 
-    // Group items by month and product
+    // Group items by month and product using prepared date
     filteredItems.forEach(item => {
-      const itemMonth = format(new Date(item.createdAt), "MMM yyyy");
+      const itemMonth = format(parseISO(item.preparedDate), "MMM yyyy");
       if (months.includes(itemMonth)) {
         if (!monthlyData[itemMonth][item.product]) {
           monthlyData[itemMonth][item.product] = 0;
