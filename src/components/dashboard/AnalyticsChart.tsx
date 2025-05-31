@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -122,7 +123,7 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Inventory Analytics (Month to Date)</CardTitle>
+        <CardTitle>Inventory Analytics</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
