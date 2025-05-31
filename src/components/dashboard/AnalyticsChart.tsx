@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,13 +13,19 @@ import { cn } from "@/lib/utils";
 
 interface AnalyticsChartProps {
   items: InventoryItem[];
+  defaultStartDate?: Date;
+  defaultEndDate?: Date;
 }
 
-export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ items }) => {
+export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ 
+  items, 
+  defaultStartDate, 
+  defaultEndDate 
+}) => {
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
   const [selectedPreparedBy, setSelectedPreparedBy] = useState<string>("all");
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [startDate, setStartDate] = useState<Date | undefined>(defaultStartDate);
+  const [endDate, setEndDate] = useState<Date | undefined>(defaultEndDate);
 
   // Extract unique products and preparers
   const uniqueProducts = useMemo(() => {
@@ -61,14 +66,11 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ items }) => {
       });
     }
 
-    // Filter by date range (using status_updated_at for used/waste, created_at for active)
+    // Filter by date range using prepared_date
     if (startDate && endDate) {
       filteredItems = filteredItems.filter(item => {
-        const dateToCheck = item.status === 'active' 
-          ? parseISO(item.createdAt)
-          : parseISO(item.statusUpdatedAt);
-        
-        return isWithinInterval(dateToCheck, { start: startDate, end: endDate });
+        const prepDate = parseISO(item.preparedDate);
+        return isWithinInterval(prepDate, { start: startDate, end: endDate });
       });
     }
 
@@ -113,14 +115,14 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ items }) => {
   const clearFilters = () => {
     setSelectedProduct("all");
     setSelectedPreparedBy("all");
-    setStartDate(undefined);
-    setEndDate(undefined);
+    setStartDate(defaultStartDate);
+    setEndDate(defaultEndDate);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Inventory Analytics</CardTitle>
+        <CardTitle>Inventory Analytics (Month to Date)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -221,7 +223,7 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ items }) => {
 
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-muted-foreground">
-            Showing {chartData.reduce((sum, item) => sum + item.count, 0)} total items
+            Showing {chartData.reduce((sum, item) => sum + item.count, 0)} total items prepared in selected period
           </div>
           <Button variant="outline" size="sm" onClick={clearFilters}>
             Clear Filters

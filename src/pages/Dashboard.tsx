@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Layout } from "../components/Layout";
 import { useQuery } from "@tanstack/react-query";
@@ -15,12 +16,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, ChartPieIcon, LineChart, LayoutDashboard } from "lucide-react";
 import { useRestaurantStore } from "@/stores/restaurantStore";
+import { startOfMonth } from "date-fns";
 
 const Dashboard: React.FC = () => {
   const { selectedRestaurant } = useRestaurantStore();
   const restaurantId = selectedRestaurant?.id;
   
   console.log("Dashboard page - Selected restaurant:", selectedRestaurant?.name, restaurantId);
+  
+  // Calculate month-to-date range
+  const monthStartDate = startOfMonth(new Date());
+  const todayDate = new Date();
   
   // Fetch all inventory items for analytics
   const { data: allInventoryItems = [], isLoading: allItemsLoading } = useQuery({
@@ -130,7 +136,11 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
             ) : (
-              <AnalyticsChart items={allInventoryItems} />
+              <AnalyticsChart 
+                items={allInventoryItems} 
+                defaultStartDate={monthStartDate}
+                defaultEndDate={todayDate}
+              />
             )}
           </TabsContent>
 
