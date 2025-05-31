@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { RestaurantMember } from "./types";
 import { toast } from "sonner";
@@ -42,8 +43,8 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
   try {
     console.log("Fetching members for restaurant:", restaurantId);
 
-    // First, get the restaurant members
-    const { data: members, error: membersError } = await supabase
+    // Get restaurant members with profile data in a single query using joins
+    const { data: membersWithProfiles, error } = await supabase
       .from('restaurant_members')
       .select(`
         id,
@@ -51,12 +52,18 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
         restaurant_id,
         role,
         created_at,
-        updated_at
+        updated_at,
+        profiles!inner (
+          id,
+          username,
+          first_name,
+          last_name
+        )
       `)
       .eq('restaurant_id', restaurantId);
       
-    if (membersError) {
-      console.error("Error fetching restaurant members:", membersError);
+    if (error) {
+      console.error("Error fetching restaurant members with profiles:", error);
       toast.error("Error fetching team members. Please refresh the page.", {
         id: "member-error",
         duration: 5000,
@@ -64,39 +71,15 @@ export const getRestaurantMembers = async (restaurantId: string): Promise<Restau
       return [];
     }
     
-    if (!members || members.length === 0) {
+    if (!membersWithProfiles || membersWithProfiles.length === 0) {
       console.log("No members found for restaurant:", restaurantId);
       return [];
     }
 
-    console.log("Found members:", members);
+    console.log("Found members with profiles:", membersWithProfiles);
     
-    // Now fetch the profiles for these members
-    const userIds = members.map(member => member.user_id);
-    console.log("Fetching profiles for user IDs:", userIds);
-    
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, username, first_name, last_name")
-      .in("id", userIds);
-    
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      // Continue with the members data even if profiles can't be fetched
-    }
-    
-    console.log("Fetched profiles:", profiles);
-    
-    // Create a map for quick profile lookup
-    const profileMap = new Map();
-    if (profiles) {
-      profiles.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
-    }
-
-    const formattedMembers: RestaurantMember[] = members.map(member => {
-      const profile = profileMap.get(member.user_id);
+    const formattedMembers: RestaurantMember[] = membersWithProfiles.map(member => {
+      const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
       
       return {
         id: member.id,
